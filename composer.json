@@ -1,0 +1,9 @@
+{
+    "name": "iamdroid/sshfs-mount-tool",
+    "description": "CLI tool for manage and mount SSHFS volumes.",
+    "version": "1.0.0",
+    "type": "project",
+    "require": {
+        "symfony/yaml": "^4.1"
+    }
+}

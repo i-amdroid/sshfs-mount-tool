@@ -1,0 +1,7 @@
+{
+  "chmod": "0755",
+  "files": ["src/smt.php", "README.md"],
+  "main": "bin/main",
+  "output": "smt.phar",
+  "stub": true
+}
