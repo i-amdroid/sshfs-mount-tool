@@ -5,14 +5,6 @@
   "type": "project",
   "require": {
     "symfony/yaml": "^4.1",
-    "phplucidframe/console-table": "^1.2",
-    "cweagans/composer-patches": "~1.0"
-  },
-  "extra": {
-    "patches": {
-      "phplucidframe/console-table": {
-        "Additional fix for counting special characters.": "patches/phplucidframe--console-table--2.patch"
-      }
-    }
+    "phplucidframe/console-table": "^1.2"
   }
 }

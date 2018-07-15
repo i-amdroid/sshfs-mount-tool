@@ -4,64 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "4923f8edfc8e14de1485dc08a6ecda3b",
+    "content-hash": "f26a2c80c7e27dafd24d5403dba2c883",
     "packages": [
         {
-            "name": "cweagans/composer-patches",
-            "version": "1.6.5",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/cweagans/composer-patches.git",
-                "reference": "2ec4f00ff5fb64de584c8c4aea53bf9053ecb0b3"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/cweagans/composer-patches/zipball/2ec4f00ff5fb64de584c8c4aea53bf9053ecb0b3",
-                "reference": "2ec4f00ff5fb64de584c8c4aea53bf9053ecb0b3",
-                "shasum": ""
-            },
-            "require": {
-                "composer-plugin-api": "^1.0",
-                "php": ">=5.3.0"
-            },
-            "require-dev": {
-                "composer/composer": "~1.0",
-                "phpunit/phpunit": "~4.6"
-            },
-            "type": "composer-plugin",
-            "extra": {
-                "class": "cweagans\\Composer\\Patches"
-            },
-            "autoload": {
-                "psr-4": {
-                    "cweagans\\Composer\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Cameron Eagans",
-                    "email": "me@cweagans.net"
-                }
-            ],
-            "description": "Provides a way to patch Composer packages.",
-            "time": "2018-05-11T18:00:16+00:00"
-        },
-        {
             "name": "phplucidframe/console-table",
-            "version": "v1.2.1",
+            "version": "v1.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phplucidframe/console-table.git",
-                "reference": "1d8d989e84ce99dc146619bce233a85d46e326ab"
+                "reference": "0d25237773ffe3acc55d5ab354d87d34efe42d84"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phplucidframe/console-table/zipball/1d8d989e84ce99dc146619bce233a85d46e326ab",
-                "reference": "1d8d989e84ce99dc146619bce233a85d46e326ab",
+                "url": "https://api.github.com/repos/phplucidframe/console-table/zipball/0d25237773ffe3acc55d5ab354d87d34efe42d84",
+                "reference": "0d25237773ffe3acc55d5ab354d87d34efe42d84",
                 "shasum": ""
             },
             "require": {
@@ -71,11 +27,6 @@
                 "phpunit/phpunit": "*"
             },
             "type": "library",
-            "extra": {
-                "patches_applied": {
-                    "Additional fix for counting special characters.": "patches/phplucidframe--console-table--2.patch"
-                }
-            },
             "autoload": {
                 "psr-0": {
                     "LucidFrame\\": "src/",
@@ -93,7 +44,7 @@
                 }
             ],
             "description": "Console Table",
-            "time": "2017-12-24T12:17:32+00:00"
+            "time": "2018-07-15T11:05:02+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",

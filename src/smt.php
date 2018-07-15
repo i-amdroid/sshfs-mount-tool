@@ -15,11 +15,23 @@ $current_config_file = $path . '/smt.yml';
 
 $project_info_file = __DIR__ . '/../composer.json';
 
-// @todo detect environment
+// @todo detect environment in init()
 $environment = 'macos-2.10';
 require_once __DIR__ . '/../includes/' . $environment . '.inc';
 
 // Functions
+
+function init() {
+  // @todo detect environment
+  echo '<Init>' . PHP_EOL;
+  return;
+}
+
+function create_config_file() {
+  // @todo create user config file
+  echo '<Create config file>' . PHP_EOL;
+  return;
+}
 
 function get_config_file() {
   global $user_config_file;
@@ -93,6 +105,26 @@ function get_cid($mount_point) {
   return FALSE;
 }
 
+function match_cid($input) {
+  $connections = get_connections();
+  foreach ($connections as $cid => $connection_settings) {
+    if ($input == $cid) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+function match_cmd($input) {
+  global $commands;
+  foreach ($commands as $cmd => $command_settings) {
+    if (in_array($input, $command_settings['aliases'])) {
+      return $cmd;
+    }
+  }
+  return FALSE;
+}
+
 function run_cmd($cmd, $success_message = 'Ok') {
   $output = [];
   $result_code = 0;
@@ -108,71 +140,33 @@ function green($text) {
   return "\033[32m" . $text . "\033[39m";
 }
 
-// User input commands
-
-// choose connection for mount
-function cmd_choose_mount_connection() {
+function show_connections($mounted_only = FALSE) {
   $connections = get_connections();
   $mounts = get_mounts();
   $i = 1;
   $cids = [];
 
   $table = new ConsoleTable();
-  $table->setHeaders(array('#', 'connection', 'status'));
+  $table->setHeaders([
+    '#',
+    'connection',
+    'status',
+  ]);
   foreach ($connections as $cid => $connection_settings) {
     if (in_array($cid, $mounts)) {
-      $table->addRow(array(
+      $table->addRow([
         green($i),
         green($cid),
-        green('mounted')
-      ));
-    } else {
-      $table->addRow(array($i, $cid, 'not mounted'));
-    }
-    $cids[$i] = $cid;
-    $i++;
-  }
-  $table->setPadding(2);
-  $table->hideBorder();
-  $table->display();
-  $input = readline('Number or name of connection for mount: ');
-  if (is_numeric($input)) {
-    // @todo check for correct number
-    $cid = $cids[$input];
-  }
-  else {
-    // @todo check for correct name
-    $cid = $input;
-  }
-  return cmd_mount($cid);
-}
-
-function cmd_mount($cid, $password = NULL) {
-  // echo '<Mounting ' . $cid . PHP_EOL;
-  // $connection_settings = get_connection_settings($cid);
-  // print_r ($connection_settings);
-  $cmd = gen_mount_cmd($cid);
- // echo $cmd;
-  $success_message = 'Mounted' . PHP_EOL;
-  echo run_cmd($cmd, $success_message);
-}
-
-// choose connection for unmount
-function cmd_choose_unmount_connection() {
-  $connections = get_connections();
-  $mounts = get_mounts();
-  $i = 1;
-  $cids = [];
-
-  $table = new ConsoleTable();
-  $table->setHeaders(array('#', 'connection', 'status'));
-  foreach ($connections as $cid => $connection_settings) {
-    if (in_array($cid, $mounts)) {
-      $table->addRow(array(
-        green($i),
-        green($cid),
-        green('mounted')
-      ));
+        green('mounted'),
+      ]);
+      $cids[$i] = $cid;
+      $i++;
+    } elseif (!$mounted_only) {
+      $table->addRow([
+        $i,
+        $cid,
+        'not mounted',
+      ]);
       $cids[$i] = $cid;
       $i++;
     }
@@ -180,28 +174,267 @@ function cmd_choose_unmount_connection() {
   $table->setPadding(2);
   $table->hideBorder();
   $table->display();
-  $input = readline('Number or name of connection for unmount: ');
-  if (is_numeric($input)) {
-    // @todo check for correct number
-    $cid = $cids[$input];
-  }
-  else {
-    // @todo check for correct name
-    $cid = $input;
-  }
-  return cmd_unmount($cid);
+  return $cids;
 }
 
-function cmd_unmount($cid) {
+// User input commands
+
+$commands = [];
+
+$commands['default'] = [
+  'name' => 'Mount connection',
+  'aliases' => [],
+  'optional_args' => [
+    'cid' => [
+      'validate' => 'match_cid',
+    ],
+    'password' => [
+      'key' => 'p',
+    ],
+  ],
+  'cmd' => 'cmd_mount', 
+];
+
+$commands['unmount'] = [
+  'name' => 'Unmount connection',
+  'aliases' => [
+    'unmount',
+    'um',
+  ],
+  'optional_args' => [
+    'cid' => [
+      'validate' => 'match_cid',
+    ],
+  ],
+  'cmd' => 'cmd_unmount', 
+];
+
+$commands['add'] = [
+  'name' => 'Add connection',
+  'aliases' => [
+    'add',
+  ],
+  'cmd' => 'cmd_add', 
+];
+
+$commands['remove'] = [
+  'name' => 'Remove connection',
+  'aliases' => [
+    'remove',
+    'rm',
+  ],
+  'optional_args' => [
+    'cid' => [
+      'validate' => 'match_cid',
+    ],
+  ],
+  'cmd' => 'cmd_remove', 
+];
+
+$commands['list'] = [
+  'name' => 'List connection properties',
+  'aliases' => [
+    'list',
+    'ls',
+  ],
+  'optional_args' => [
+    'cid' => [
+      'validate' => 'match_cid',
+    ],
+  ],
+  'cmd' => 'cmd_list', 
+];
+
+$commands['status'] = [
+  'name' => 'Show status of connections',
+  'aliases' => [
+    'status',
+    'st',
+  ],
+  'cmd' => 'cmd_status', 
+];
+
+$commands['config'] = [
+  'name' => 'Open config file',
+  'aliases' => [
+    'config',
+    'cfg',
+  ],
+  'flags' => [
+      'global' => [
+        'key' => 'g',
+    ],
+  ],
+  'cmd' => 'cmd_config',
+];
+
+$commands['help'] = [
+  'name' => 'Show help',
+  'aliases' => [
+    'help',
+    '--help',
+    '-h',
+  ],
+  'optional_args' => [
+    'cmd' => [
+      'validate' => 'match_cmd',
+    ],
+  ],
+  'cmd' => 'cmd_help', 
+];
+
+$commands['version'] = [
+  'name' => 'Show version',
+  'aliases' => [
+    'version',
+    '--version',
+    '-v',
+  ],
+  'cmd' => 'cmd_version',
+];
+
+$commands['info'] = [
+  'name' => 'Show information about dependencies',
+  'aliases' => [
+    'info',
+    '--info',
+    '-i',
+  ],
+  'cmd' => 'cmd_info',
+];
+
+$commands['cd'] = [
+  'name' => 'Change directory to connection mount directory',
+  'aliases' => [
+    'cd',
+  ],
+  'optional_args' => [
+    'cid' => [
+      'validate' => 'match_cid',
+    ],
+  ],
+  'cmd' => 'cmd_cd', 
+];
+
+$commands['ssh'] = [
+  'name' => 'Launch SSH session',
+  'aliases' => [
+    'ssh',
+  ],
+  'optional_args' => [
+    'cid' => [
+      'validate' => 'match_cid',
+    ],
+  ],
+  'cmd' => 'cmd_ssh', 
+];
+
+
+function cmd_mount($cid = NULL, $password = NULL) {
+  if (!$cid) {
+    $cids = show_connections();
+    $input = readline('Number or name of connection for mount: ');
+    if (is_numeric($input)) {
+      // @todo check for correct number
+      $cid = $cids[$input];
+    }
+    else {
+      // @todo check for correct name
+      $cid = $input;
+    }
+  }
+  $cmd = gen_mount_cmd($cid);
+  $success_message = 'Mounted' . PHP_EOL;
+  echo run_cmd($cmd, $success_message);
+  return;
+}
+
+function cmd_unmount($cid = FALSE) {
+  if (!$cid) {
+    $cids = show_connections(TRUE);
+    $input = readline('Number or name of connection for unmount: ');
+    if (is_numeric($input)) {
+      // @todo check for correct number
+      $cid = $cids[$input];
+    }
+    else {
+      // @todo check for correct name
+      $cid = $input;
+    }
+  }
   $cmd = gen_unmount_cmd($cid);
-  //echo $cmd;
   $success_message = 'Unmounted' . PHP_EOL;
   echo run_cmd($cmd, $success_message);
+  return;
 }
 
-function cmd_init() {
-  // @todo create user config file
-  echo '<Creating config file>' . PHP_EOL;
+function cmd_add() {
+  // @todo 
+  echo '<Add connection>' . PHP_EOL;
+  return;
+}
+
+function cmd_remove($cid = FALSE) {
+  // @todo 
+  echo '<Remove connection> cid: ' . $cid . PHP_EOL;
+  return;
+}
+
+function cmd_list($cid = FALSE) {
+  if (!$cid) {
+    $cids = show_connections();
+    $input = readline('Number or name of connection to show: ');
+    if (is_numeric($input)) {
+      // @todo check for correct number
+      $cid = $cids[$input];
+    }
+    else {
+      // @todo check for correct name
+      $cid = $input;
+    }
+  }
+
+  $connection_settings = get_connection_settings($cid);
+  // @todo pretify
+  print_r ($connection_settings);
+  return;
+}
+
+function cmd_cd($cid = FALSE) {
+  // @todo 
+  echo '<Changing directory> cid: ' . $cid . PHP_EOL;
+  return;
+}
+
+function cmd_ssh($cid = FALSE) {
+  // @todo 
+  echo '<Launch SSH session> cid: ' . $cid . PHP_EOL;
+  return;
+}
+
+function cmd_status() {
+  show_connections();
+  return;
+}
+
+function cmd_config($global = FALSE) {
+  // @todo 
+  echo '<Open config file> global: ' . $global . PHP_EOL;
+  return;
+}
+
+function cmd_help($cmd = FALSE) {
+  // @todo 
+  echo '<Show help> cmd: ' . $cmd . PHP_EOL;
+  return;
+}
+
+function cmd_version() {
+  global $project_info_file;
+  $project_info = file_get_contents($project_info_file);
+  $project_info = json_decode($project_info, true);
+  echo $project_info['version'] . PHP_EOL;
+  return;
 }
 
 function cmd_info() {
@@ -210,107 +443,93 @@ function cmd_info() {
   $project_info = file_get_contents($project_info_file);
   $project_info = json_decode($project_info, true);
   $info[] = 'SSHFS Mount Tool v' . $project_info['version'];
-  exec('sshfs --version', $info);
+  exec('sshfs --version 2> /dev/null', $info);
+  // @todo check for other dependencies
+  // @todo show as table "dependency version : status"
   foreach ($info as $key => $line) {
     echo $line . PHP_EOL;
   }
-}
-
-function cmd_list($cid) {
-  $connection_settings = get_connection_settings($cid);
-  // @todo pretify
-  print_r ($connection_settings);
-}
-
-function cmd_status() {
-  $connections = get_connections();
-  $mounts = get_mounts();
-  $i = 1;
-  $table = new ConsoleTable();
-  $table->setHeaders(array('#', 'connection', 'status'));
-  foreach ($connections as $cid => $connection_settings) {
-    if (in_array($cid, $mounts)) {
-      $table->addRow(array(
-        green($i),
-        green($cid),
-        green('mounted')
-      ));
-    } else {
-      $table->addRow(array($i, $cid, 'not mounted'));
-    }
-    $i++;
-  }
-  $table->setPadding(2);
-  $table->hideBorder();
-  $table->display();
   return;
 }
 
-function cmd_unknown($cmd) {
-  echo 'Unknown argument: ' . $cmd . PHP_EOL;
-}
-
-function select_command($cmd, $args = NULL) {
-  switch ($cmd) {
-    case 'ccm':
-      cmd_choose_mount_connection();
-      break;
-
-    case 'mnt':
-    case 'mount':
-      cmd_mount($args['cid'], $args['password']);
-      break;
-
-    case 'ccu':
-      cmd_choose_unmount_connection();
-      break;
-
-    case 'um':
-    case 'unmount':
-      cmd_unmount($args['cid']);
-      break;  
-
-    case 'init':
-      cmd_init();
-      break;
-
-    case 'ls':
-    case 'list':
-      cmd_list($args['cid']);
-      break;  
-
-    case 'st':
-    case 'status':
-      cmd_status();
-      break; 
-
-    case 'info':
-      cmd_info();
-      break;  
-    
-    default:
-      cmd_unknown($cmd);
-      break;
+function handle_input($args, $args_count) {
+  global $commands;
+  // no args
+  if ($args_count == 1) {
+    // analise skip for performance
+    $cmd_cmd = $commands['default']['cmd'];
+    $cmd_cmd();
+    return;
   }
-}
-
-function parse_input($argv, $argc) {
-  $args = [];
-  if ($argc == 1) {
-    select_command('ccm');
-  } elseif ($argc == 2) {
-    if ($argv[1] == 'um') {
-      select_command('ccu');
-    } else {
-      select_command($argv[1]);
+  // one arg
+  elseif ($args_count == 2) {
+    // one arg: cmd
+    $cmd = match_cmd($args[1]);
+    if ($cmd) {
+      $cmd_cmd = $commands[$cmd]['cmd'];
+      $cmd_cmd();
     }
-  } else {
-    $args['cid'] = $argv[2];
-    $args['password'] = NULL;
-    select_command($argv[1], $args);
+    // one arg: cid, analise skip for performance
+    elseif (match_cid($args[1])) {
+      $cmd_cmd = $commands['default']['cmd'];
+      $cmd_cmd($args[1]);
+    }
+    // one arg: not match
+    else {
+      echo 'Unknown command ' . $args[1] . PHP_EOL;
+    }
+  }
+  // two+ args
+  elseif ($args_count >= 2) {
+    // two+ args: cmd, something
+    $cmd = match_cmd($args[1]);
+    if ($cmd) {
+      // check command have required args - skip for now
+      // check command have optional args
+      if (array_key_exists('optional_args', $commands[$cmd])) {
+        // get defenition of first arg
+        $cmd_arg_1 = reset($commands[$cmd]['optional_args']);
+        // check for validation
+        if (array_key_exists('validate', $cmd_arg_1)) {
+          $cmd_arg_validate = $cmd_arg_1['validate'];
+          // valid
+          if ($cmd_arg_validate($args[2])) {
+            // @todo check for other agrs
+            $cmd_cmd = $commands[$cmd]['cmd'];
+            $cmd_cmd($args[2]);
+          }
+          // not valid
+          else {
+            echo 'Argument ' . $args[2] . ' not valid for ' . $cmd . PHP_EOL;
+          }
+        }
+        // no validation
+        else {
+          // @todo check for other agrs
+          $cmd_cmd = $commands[$cmd]['cmd'];
+          $cmd_cmd($args[2]);
+        }
+        
+      }
+      // check command have flags
+      elseif (array_key_exists('flags', $commands[$cmd])) {
+
+      }
+      // too many args
+      else {
+        echo 'Too many arguments for ' . $args[1] . PHP_EOL;
+      }
+
+
+    }
+
+    // two+ args: cid, something
+
+    // two+ args: not mach
   }
 }
 
 // Main function
 
-parse_input($argv, $argc);
+handle_input($argv, $argc);
+
