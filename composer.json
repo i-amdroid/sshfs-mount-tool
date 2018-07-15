@@ -1,9 +1,18 @@
 {
-    "name": "iamdroid/sshfs-mount-tool",
-    "description": "CLI tool for manage and mount SSHFS volumes.",
-    "version": "1.0.0",
-    "type": "project",
-    "require": {
-        "symfony/yaml": "^4.1"
+  "name": "iamdroid/sshfs-mount-tool",
+  "description": "CLI tool for manage and mount SSHFS volumes.",
+  "version": "1.0.0",
+  "type": "project",
+  "require": {
+    "symfony/yaml": "^4.1",
+    "phplucidframe/console-table": "^1.2",
+    "cweagans/composer-patches": "~1.0"
+  },
+  "extra": {
+    "patches": {
+      "phplucidframe/console-table": {
+        "Additional fix for counting special characters.": "patches/phplucidframe--console-table--2.patch"
+      }
     }
+  }
 }
