@@ -177,6 +177,29 @@ function show_connections($mounted_only = FALSE) {
   return $cids;
 }
 
+function validate_input($input, $cids) {
+  if (is_numeric($input)) {
+    $input = intval($input);
+    $cids_count = count($cids);
+    if ($input > 0 && $input <= $cids_count) {
+      $cid = $cids[$input];
+    } else {
+      echo $input . ' is not a valid connection number' . PHP_EOL;
+      exit(1);
+    }
+  }
+  else {
+    if (match_cid($input)) {
+      $cid = $input;
+    }
+    else {
+      echo $input . ' is not a valid connection name' . PHP_EOL;
+      exit(1);
+    }
+  }
+  return $cid;
+}
+
 // User input commands
 
 $commands = [];
@@ -334,14 +357,7 @@ function cmd_mount($cid = NULL, $password = NULL) {
   if (!$cid) {
     $cids = show_connections();
     $input = readline('Number or name of connection for mount: ');
-    if (is_numeric($input)) {
-      // @todo check for correct number
-      $cid = $cids[$input];
-    }
-    else {
-      // @todo check for correct name
-      $cid = $input;
-    }
+    $cid = validate_input($input, $cids);
   }
   $cmd = gen_mount_cmd($cid);
   $success_message = 'Mounted' . PHP_EOL;
@@ -353,14 +369,7 @@ function cmd_unmount($cid = FALSE) {
   if (!$cid) {
     $cids = show_connections(TRUE);
     $input = readline('Number or name of connection for unmount: ');
-    if (is_numeric($input)) {
-      // @todo check for correct number
-      $cid = $cids[$input];
-    }
-    else {
-      // @todo check for correct name
-      $cid = $input;
-    }
+    $cid = validate_input($input, $cids);
   }
   $cmd = gen_unmount_cmd($cid);
   $success_message = 'Unmounted' . PHP_EOL;
@@ -384,16 +393,8 @@ function cmd_list($cid = FALSE) {
   if (!$cid) {
     $cids = show_connections();
     $input = readline('Number or name of connection to show: ');
-    if (is_numeric($input)) {
-      // @todo check for correct number
-      $cid = $cids[$input];
-    }
-    else {
-      // @todo check for correct name
-      $cid = $input;
-    }
+    $cid = validate_input($input, $cids);
   }
-
   $connection_settings = get_connection_settings($cid);
   // @todo pretify
   print_r ($connection_settings);
