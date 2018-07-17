@@ -360,7 +360,12 @@ function cmd_mount($cid = NULL, $password = NULL) {
     $cid = validate_input($input, $cids);
   }
   $cmd = gen_mount_cmd($cid);
-  $success_message = 'Mounted' . PHP_EOL;
+  $connection_settings = get_connection_settings($cid);
+  $success_message = '';
+  if (isset($connection_settings['user'])) {
+    $success_message .= $connection_settings['user'] . '@';
+  }
+  $success_message .= $connection_settings['server'] . ' ' . green('mounted') . ' to ' . $connection_settings['mount'] . PHP_EOL;
   echo run_cmd($cmd, $success_message);
   return;
 }
@@ -372,7 +377,12 @@ function cmd_unmount($cid = FALSE) {
     $cid = validate_input($input, $cids);
   }
   $cmd = gen_unmount_cmd($cid);
-  $success_message = 'Unmounted' . PHP_EOL;
+  $connection_settings = get_connection_settings($cid);
+  $success_message = '';
+  if (isset($connection_settings['user'])) {
+    $success_message .= $connection_settings['user'] . '@';
+  }
+  $success_message .= $connection_settings['server'] . ' ' . green('unmounted') . PHP_EOL;
   echo run_cmd($cmd, $success_message);
   return;
 }
@@ -396,21 +406,71 @@ function cmd_list($cid = FALSE) {
     $cid = validate_input($input, $cids);
   }
   $connection_settings = get_connection_settings($cid);
-  // @todo pretify
-  print_r ($connection_settings);
+
+  $table = new ConsoleTable();
+  $table->setHeaders([
+    'property',
+    'value',
+  ]);
+  foreach ($connection_settings as $key => $value) {
+    if ($key == 'options') {
+      $table->addRow([
+        $key,
+        $value,
+      ]);
+    } else {
+      $table->addRow([
+        $key,
+        $value,
+      ]);
+    }
+  }
+  $table->setPadding(2);
+  $table->hideBorder();
+  $table->display();
   return;
 }
 
 function cmd_cd($cid = FALSE) {
-  // @todo 
-  echo '<Changing directory> cid: ' . $cid . PHP_EOL;
-  return;
+  global $home;
+  if (!$cid) {
+    $cids = show_connections();
+    $input = readline('Number or name of connection: ');
+    $cid = validate_input($input, $cids);
+  }
+  $connection_settings = get_connection_settings($cid);
+  if (isset($connection_settings['mount'])) {
+    if (substr($connection_settings['mount'], 0, 1) == '~') {
+      $path = $home . substr($connection_settings['mount'], 1);
+    } else {
+      $path = $connection_settings['mount'];
+    }
+    // @todo check for way to properly run command
+    // shell_exec('cd ' . $path);
+    // placeholder:
+    echo 'cd ' . $path . PHP_EOL;
+    return;
+  }
+  else {
+    echo 'No mountpoint for ' . $cid .  ' set' . PHP_EOL;
+    exit(1);
+  }
 }
 
 function cmd_ssh($cid = FALSE) {
-  // @todo 
-  echo '<Launch SSH session> cid: ' . $cid . PHP_EOL;
+  if (!$cid) {
+    $cids = show_connections();
+    $input = readline('Number or name of connection: ');
+    $cid = validate_input($input, $cids);
+  }
+  $connection_settings = get_connection_settings($cid);
+
+  // @todo check for way to properly run command
+  // shell_exec('ssh ' . $connection_settings['user'] . '@' . $connection_settings['server']);
+  // placeholder:
+  echo 'ssh ' . $connection_settings['user'] . '@' . $connection_settings['server'] . PHP_EOL;
   return;
+
 }
 
 function cmd_status() {
