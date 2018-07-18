@@ -68,3 +68,11 @@ function get_mounts() {
   }
   return $cids;
 }
+
+function run_terminal_cmd($cmd, $new_tab = TRUE) {
+  if ($new_tab) {
+    return shell_exec('osascript -e \'tell application "Terminal" to activate\' -e \'tell application "System Events" to tell process "Terminal" to keystroke "t" using command down\' -e \'tell application "Terminal" to do script "' . $cmd . '" in selected tab of the front window\'');
+  } else {
+    return shell_exec('osascript -e \'tell application "Terminal" to do script "' . $cmd . '"\'');
+  }
+}

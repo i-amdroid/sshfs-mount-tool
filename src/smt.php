@@ -445,10 +445,8 @@ function cmd_cd($cid = FALSE) {
     } else {
       $path = $connection_settings['mount'];
     }
-    // @todo check for way to properly run command
-    // shell_exec('cd ' . $path);
-    // placeholder:
-    echo 'cd ' . $path . PHP_EOL;
+    $cd_cmd = 'cd ' . $path;
+    run_terminal_cmd($cd_cmd);
     return;
   }
   else {
@@ -465,12 +463,13 @@ function cmd_ssh($cid = FALSE) {
   }
   $connection_settings = get_connection_settings($cid);
 
-  // @todo check for way to properly run command
-  // shell_exec('ssh ' . $connection_settings['user'] . '@' . $connection_settings['server']);
-  // placeholder:
-  echo 'ssh ' . $connection_settings['user'] . '@' . $connection_settings['server'] . PHP_EOL;
+  $ssh_cmd = 'ssh ';
+  if (isset($connection_settings['user'])) {
+    $ssh_cmd .= $connection_settings['user'] . '@';
+  }
+  $ssh_cmd .= $connection_settings['server'];
+  run_terminal_cmd($ssh_cmd);
   return;
-
 }
 
 function cmd_status() {
@@ -479,8 +478,15 @@ function cmd_status() {
 }
 
 function cmd_config($global = FALSE) {
-  // @todo 
-  echo '<Open config file> global: ' . $global . PHP_EOL;
+  global $user_config_file;
+  if (!$global) {
+    $config_file = get_config_file();
+  }
+  else {
+    $config_file = $user_config_file;
+  }
+  $config_cmd = '$EDITOR ' . $config_file;
+  shell_exec($config_cmd);
   return;
 }
 
