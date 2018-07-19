@@ -48,8 +48,8 @@ function get_config() {
 }
 
 function set_config($config, $config_file) {
-  $yaml = Yaml::dump($config);
-  file_put_contents($config_file, $yaml);
+  $yaml = Yaml::dump($config, 4, 2);
+  return file_put_contents($config_file, $yaml);
 }
 
 function get_connections() {
@@ -80,13 +80,20 @@ function set_connection_settings($cid, $connection_settings, $use_current_config
   if ($use_current_config_file) {
     $config_file = $current_config_file;
   } else {
-    $user_config_file;
+    $config_file = $user_config_file;
   }
   return set_config($config, $config_file);
 }
 
 function remove_connection_settings($cid) {
-  // @todo
+  $config_file = get_config_file();
+  $config = get_config();
+  foreach ($config['connections'] as $key => $value) {
+    if ($key == $cid) {
+      unset($config['connections'][$key]);
+    }
+  }
+  return set_config($config, $config_file);
 }
 
 function get_cid($mount_point) {
@@ -136,6 +143,21 @@ function run_cmd($cmd, $success_message = 'Ok') {
   return $run;
 }
 
+// https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
+function readline_silent($prompt = '') {
+  $command = "/usr/bin/env bash -c 'echo OK'";
+  if (rtrim(shell_exec($command)) !== 'OK') {
+    trigger_error("Can't invoke bash");
+    return;
+  }
+  $command = "/usr/bin/env bash -c 'read -s -p \""
+    . addslashes($prompt)
+    . "\" mypassword && echo \$mypassword'";
+  $input = rtrim(shell_exec($command));
+  echo "\n";
+  return $input;
+}
+
 function green($text) {
   return "\033[32m" . $text . "\033[39m";
 }
@@ -175,6 +197,36 @@ function show_connections($mounted_only = FALSE) {
   $table->hideBorder();
   $table->display();
   return $cids;
+}
+
+function show_connection_settings($connection_settings) {
+  $table = new ConsoleTable();
+  $table->setHeaders([
+    'property',
+    'value',
+  ]);
+  foreach ($connection_settings as $key => $value) {
+    if ($key == 'options') {
+      $table->addRow([
+        $key,
+        implode(',', $value),
+      ]);
+    } elseif ($key == 'password' && $value) {
+      $table->addRow([
+        $key,
+        '[password]',
+      ]);
+    } else {
+      $table->addRow([
+        $key,
+        $value,
+      ]);
+    }
+  }
+  $table->setPadding(2);
+  $table->hideBorder();
+  $table->display();
+  return;
 }
 
 function validate_input($input, $cids) {
@@ -388,15 +440,51 @@ function cmd_unmount($cid = FALSE) {
 }
 
 function cmd_add() {
-  // @todo 
-  echo '<Add connection>' . PHP_EOL;
-  return;
+  $connection_settings = [];
+  $connection_settings['server'] = '';
+  while (!$connection_settings['server']) {
+    $connection_settings['server'] = readline('Server (required): ');
+  }
+  $connection_settings['port'] = readline('Port (default "22"): ');
+  $connection_settings['user'] = readline('Username: ');
+  $connection_settings['password'] = readline_silent('Password (Input hidden. If password not provided, it will be asked every time on connect. Leave blank for key auth): ');
+  $connection_settings['key'] = readline('Path to key file (Usually "~/.ssh/id_rsa". Leave blank for password auth): ');
+  $default_mount = '~/mnt/' . $connection_settings['server'];
+  $connection_settings['mount'] = readline('Mount directory (Required for mounting. [Enter] - "' . $default_mount . '"): ');
+  if (!$connection_settings['mount']) {
+    $connection_settings['mount'] = $default_mount;
+  }
+  $connection_settings['remote'] = readline('Remote directory: ');
+  $options = readline('Mount options (separated by comma): ');
+  $options = explode (',', $options);
+  $options = array_map('trim', $options);
+  $connection_settings['options'] = array_filter($options);
+  $connection_settings['title'] = readline('Connection name ([Enter] - "' . $connection_settings['server'] . '"): ');
+  if (!$connection_settings['title']) {
+    $connection_settings['title'] = $connection_settings['server'];
+  }
+  $cid = $connection_settings['title'];
+  echo PHP_EOL;
+  show_connection_settings($connection_settings);
+  echo PHP_EOL;
+  // @todo while loop
+  $save_config = readline('Seve config (y, [Enter] - to user directory / c - to current directory / n - cancel): ');
+  if (!$save_config || $save_config == 'y' || $save_config == 'Y') {
+    return set_connection_settings($cid, $connection_settings);
+  } elseif ($save_config == 'c' || $save_config == 'C') {
+    return set_connection_settings($cid, $connection_settings, TRUE);
+  } else {
+    return;
+  }
 }
 
 function cmd_remove($cid = FALSE) {
-  // @todo 
-  echo '<Remove connection> cid: ' . $cid . PHP_EOL;
-  return;
+  if (!$cid) {
+    $cids = show_connections();
+    $input = readline('Number or name of connection to remove: ');
+    $cid = validate_input($input, $cids);
+  }
+  return remove_connection_settings($cid);
 }
 
 function cmd_list($cid = FALSE) {
@@ -406,28 +494,7 @@ function cmd_list($cid = FALSE) {
     $cid = validate_input($input, $cids);
   }
   $connection_settings = get_connection_settings($cid);
-
-  $table = new ConsoleTable();
-  $table->setHeaders([
-    'property',
-    'value',
-  ]);
-  foreach ($connection_settings as $key => $value) {
-    if ($key == 'options') {
-      $table->addRow([
-        $key,
-        $value,
-      ]);
-    } else {
-      $table->addRow([
-        $key,
-        $value,
-      ]);
-    }
-  }
-  $table->setPadding(2);
-  $table->hideBorder();
-  $table->display();
+  show_connection_settings($connection_settings);
   return;
 }
 
