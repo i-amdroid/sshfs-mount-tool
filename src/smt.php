@@ -669,42 +669,62 @@ function resolve_args($argv, $argc) {
     if (!empty($argv)) {
       // here left only options
 
+      $skip_next_arg = FALSE;
       foreach ($argv as $arg_key => $arg_value) {
-        if (substr($arg_value, 0, 1) != '-') {
-          // looks like an argument
+        // skip iterration if argument already used (for flag value)
+        if (!$skip_next_arg) {
+          if (substr($arg_value, 0, 1) != '-') {
+            // looks like an argument
 
-          // check for arguments
-          $arg_found = FALSE;
-          foreach ($params['arguments'] as $parg_key => $parg_value) {
-            // check for validation
-            if (array_key_exists('validate', $parg_value)) {
-              $arg_validate = $parg_value['validate'];
-              $arg_valid = $arg_validate($arg_value);
-              if ($arg_valid) {
-                $args[$parg_key] = $arg_valid;
+            // check for arguments
+            $arg_found = FALSE;
+            foreach ($params['arguments'] as $parg_key => $parg_value) {
+              // check for validation
+              if (array_key_exists('validate', $parg_value)) {
+                $arg_validate = $parg_value['validate'];
+                $arg_valid = $arg_validate($arg_value);
+                if ($arg_valid) {
+                  $args[$parg_key] = $arg_valid;
+                  $arg_found = TRUE;
+                  break;
+                }
+              }
+            }
+            if (!$arg_found) {
+              // arg not mach any validations
+
+              // @todo think what to do with that
+            }
+
+          } else {
+            // looks like an option
+
+            // check for options
+            $arg_found = FALSE;
+            foreach ($params['options'] as $popt_key => $popt_value) {
+              // check for long option
+              if ($arg_value == '--' . $popt_key) {
+                $args[$popt_key] = TRUE;
                 $arg_found = TRUE;
                 break;
               }
+              // check for single short option
+              elseif (array_key_exists('key', $popt_value) && $arg_value == '-' . $popt_value['key']) {
+                $args[$popt_key] = TRUE;
+                $arg_found = TRUE;
+                break;
+              }
+              
+              // check for multiple short options
             }
-          }
-          if (!$arg_found) {
-            // arg not mach any validations
 
-            // @todo think what to do with that
+            // check for flags
+            // check and use $arg_key + 1 for value
           }
-
         } else {
-          // looks like an option
-
-          // check for options
-          $arg_found = FALSE;
-          foreach ($params['options'] as $popt_key => $popt_value) {
-
-          }
-
-          // check for flags
+          // reset skip
+          $skip_next_arg = FALSE;
         }
-
       }
     }
   }
