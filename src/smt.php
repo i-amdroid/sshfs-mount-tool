@@ -116,7 +116,7 @@ function match_cid($input) {
   $connections = get_connections();
   foreach ($connections as $cid => $connection_settings) {
     if ($input == $cid) {
-      return TRUE;
+      return $cid;
     }
   }
   return FALSE;
@@ -252,20 +252,59 @@ function validate_input($input, $cids) {
   return $cid;
 }
 
-// User input commands
+// params definition
+$params = [];
 
+$params['arguments']['cid'] = [
+  'name' => 'Connection name',
+  'argument' => 'connection',
+  'validate' => 'match_cid',
+];
+
+$params['arguments']['cmd'] = [
+  'name' => 'Command',
+  'argument' => 'command',
+  'validate' => 'match_cmd',
+];
+
+$params['options']['verbose'] = [
+  'name' => 'Verbose node',
+  'key' => 'v',
+];
+
+$params['options']['silent'] = [
+  'name' => 'Silent mode',
+  'key' => 's',
+];
+
+$params['options']['yes'] = [
+  'name' => 'Automatic confirmation',
+  'key' => 'y',
+];
+
+$params['options']['global'] = [
+  'name' => 'Use config in user directory',
+  'key' => 'g',
+];
+
+$params['flags']['password'] = [
+  'name' => 'Provide password',
+  'argument' => 'password',
+  'key' => 'p',
+];
+
+// commands definition
 $commands = [];
 
 $commands['default'] = [
   'name' => 'Mount connection',
   'aliases' => [],
   'optional_args' => [
-    'cid' => [
-      'validate' => 'match_cid',
-    ],
-    'password' => [
-      'key' => 'p',
-    ],
+    'cid' => $params['arguments']['cid'],
+    'password' => $params['flags']['password'],
+    'global' => $params['options']['global'],
+    'verbose' => $params['options']['verbose'],
+    'silent' => $params['options']['silent'],
   ],
   'cmd' => 'cmd_mount', 
 ];
@@ -277,9 +316,10 @@ $commands['unmount'] = [
     'um',
   ],
   'optional_args' => [
-    'cid' => [
-      'validate' => 'match_cid',
-    ],
+    'cid' => $params['arguments']['cid'],
+    'global' => $params['options']['global'],
+    'verbose' => $params['options']['verbose'],
+    'silent' => $params['options']['silent'],
   ],
   'cmd' => 'cmd_unmount', 
 ];
@@ -288,6 +328,10 @@ $commands['add'] = [
   'name' => 'Add connection',
   'aliases' => [
     'add',
+  ],
+  'optional_args' => [
+    'global' => $params['options']['global'],
+    'verbose' => $params['options']['verbose'],
   ],
   'cmd' => 'cmd_add', 
 ];
@@ -299,9 +343,10 @@ $commands['remove'] = [
     'rm',
   ],
   'optional_args' => [
-    'cid' => [
-      'validate' => 'match_cid',
-    ],
+    'cid' => $params['arguments']['cid'],
+    'global' => $params['options']['global'],
+    'silent' => $params['options']['silent'],
+    'yes' => $params['options']['yes'],
   ],
   'cmd' => 'cmd_remove', 
 ];
@@ -313,9 +358,8 @@ $commands['list'] = [
     'ls',
   ],
   'optional_args' => [
-    'cid' => [
-      'validate' => 'match_cid',
-    ],
+    'cid' => $params['arguments']['cid'],
+    'global' => $params['options']['global'],
   ],
   'cmd' => 'cmd_list', 
 ];
@@ -326,6 +370,9 @@ $commands['status'] = [
     'status',
     'st',
   ],
+  'optional_args' => [
+    'global' => $params['options']['global'],
+  ],
   'cmd' => 'cmd_status', 
 ];
 
@@ -335,10 +382,8 @@ $commands['config'] = [
     'config',
     'cfg',
   ],
-  'flags' => [
-      'global' => [
-        'key' => 'g',
-    ],
+  'optional_args' => [
+    'global' => $params['options']['global'],
   ],
   'cmd' => 'cmd_config',
 ];
@@ -351,9 +396,7 @@ $commands['help'] = [
     '-h',
   ],
   'optional_args' => [
-    'cmd' => [
-      'validate' => 'match_cmd',
-    ],
+    'cmd' => $params['arguments']['cmd'],
   ],
   'cmd' => 'cmd_help', 
 ];
@@ -363,7 +406,7 @@ $commands['version'] = [
   'aliases' => [
     'version',
     '--version',
-    '-v',
+    '-V',
   ],
   'cmd' => 'cmd_version',
 ];
@@ -384,9 +427,7 @@ $commands['cd'] = [
     'cd',
   ],
   'optional_args' => [
-    'cid' => [
-      'validate' => 'match_cid',
-    ],
+    'cid' => $params['arguments']['cid'],
   ],
   'cmd' => 'cmd_cd', 
 ];
@@ -397,16 +438,16 @@ $commands['ssh'] = [
     'ssh',
   ],
   'optional_args' => [
-    'cid' => [
-      'validate' => 'match_cid',
-    ],
+    'cid' => $params['arguments']['cid'],
   ],
   'cmd' => 'cmd_ssh', 
 ];
 
-
-function cmd_mount($cid = NULL, $password = NULL) {
-  if (!$cid) {
+// command functions
+function cmd_mount($args) {
+  if (array_key_exists('cid', $args)) {
+    $cid = $args['cid'];
+  } else {
     $cids = show_connections();
     $input = readline('Number or name of connection for mount: ');
     $cid = validate_input($input, $cids);
@@ -422,8 +463,10 @@ function cmd_mount($cid = NULL, $password = NULL) {
   return;
 }
 
-function cmd_unmount($cid = FALSE) {
-  if (!$cid) {
+function cmd_unmount($args) {
+  if (array_key_exists('cid', $args)) {
+    $cid = $args['cid'];
+  } else {
     $cids = show_connections(TRUE);
     $input = readline('Number or name of connection for unmount: ');
     $cid = validate_input($input, $cids);
@@ -439,7 +482,7 @@ function cmd_unmount($cid = FALSE) {
   return;
 }
 
-function cmd_add() {
+function cmd_add($args) {
   $connection_settings = [];
   $connection_settings['server'] = '';
   while (!$connection_settings['server']) {
@@ -478,8 +521,10 @@ function cmd_add() {
   }
 }
 
-function cmd_remove($cid = FALSE) {
-  if (!$cid) {
+function cmd_remove($args) {
+  if (array_key_exists('cid', $args)) {
+    $cid = $args['cid'];
+  } else {
     $cids = show_connections();
     $input = readline('Number or name of connection to remove: ');
     $cid = validate_input($input, $cids);
@@ -487,8 +532,10 @@ function cmd_remove($cid = FALSE) {
   return remove_connection_settings($cid);
 }
 
-function cmd_list($cid = FALSE) {
-  if (!$cid) {
+function cmd_list($args) {
+  if (array_key_exists('cid', $args)) {
+    $cid = $args['cid'];
+  } else {
     $cids = show_connections();
     $input = readline('Number or name of connection to show: ');
     $cid = validate_input($input, $cids);
@@ -498,9 +545,11 @@ function cmd_list($cid = FALSE) {
   return;
 }
 
-function cmd_cd($cid = FALSE) {
+function cmd_cd($args) {
   global $home;
-  if (!$cid) {
+  if (array_key_exists('cid', $args)) {
+    $cid = $args['cid'];
+  } else {
     $cids = show_connections();
     $input = readline('Number or name of connection: ');
     $cid = validate_input($input, $cids);
@@ -522,8 +571,10 @@ function cmd_cd($cid = FALSE) {
   }
 }
 
-function cmd_ssh($cid = FALSE) {
-  if (!$cid) {
+function cmd_ssh($args) {
+  if (array_key_exists('cid', $args)) {
+    $cid = $args['cid'];
+  } else {
     $cids = show_connections();
     $input = readline('Number or name of connection: ');
     $cid = validate_input($input, $cids);
@@ -539,31 +590,35 @@ function cmd_ssh($cid = FALSE) {
   return;
 }
 
-function cmd_status() {
+function cmd_status($args) {
   show_connections();
   return;
 }
 
-function cmd_config($global = FALSE) {
+function cmd_config($args) {
   global $user_config_file;
-  if (!$global) {
-    $config_file = get_config_file();
-  }
-  else {
+  if (array_key_exists('global', $args)) {
     $config_file = $user_config_file;
+  } else {
+    $config_file = get_config_file();
   }
   $config_cmd = '$EDITOR ' . $config_file;
   shell_exec($config_cmd);
   return;
 }
 
-function cmd_help($cmd = FALSE) {
-  // @todo 
+function cmd_help($args) {
+  if (array_key_exists('cmd', $args)) {
+    $cmd = $args['cmd'];
+  } else {
+    $cmd = FALSE;
+  }
+  // @todo
   echo '<Show help> cmd: ' . $cmd . PHP_EOL;
   return;
 }
 
-function cmd_version() {
+function cmd_version($args) {
   global $project_info_file;
   $project_info = file_get_contents($project_info_file);
   $project_info = json_decode($project_info, true);
@@ -571,7 +626,7 @@ function cmd_version() {
   return;
 }
 
-function cmd_info() {
+function cmd_info($args) {
   global $project_info_file;
   $info = [];
   $project_info = file_get_contents($project_info_file);
@@ -586,84 +641,77 @@ function cmd_info() {
   return;
 }
 
-function handle_input($args, $args_count) {
+// parse script args
+function resolve_args($argv, $argc) {
   global $commands;
-  // no args
-  if ($args_count == 1) {
-    // analise skip for performance
+  global $params;
+  $args = [];
+
+  if ($argc == 1) {
+    // no args
     $cmd_cmd = $commands['default']['cmd'];
-    $cmd_cmd();
-    return;
-  }
-  // one arg
-  elseif ($args_count == 2) {
-    // one arg: cmd
-    $cmd = match_cmd($args[1]);
+  } else {
+    // has args
+
+    // remove first arg - script name
+    array_shift($argv);  
+
+    // check new first arg is cmd
+    $cmd = match_cmd($argv[0]);
     if ($cmd) {
       $cmd_cmd = $commands[$cmd]['cmd'];
-      $cmd_cmd();
-    }
-    // one arg: cid, analise skip for performance
-    elseif (match_cid($args[1])) {
+      // command found, remove it from args
+      array_shift($argv);
+    } else {
       $cmd_cmd = $commands['default']['cmd'];
-      $cmd_cmd($args[1]);
     }
-    // one arg: not match
-    else {
-      echo 'Unknown command ' . $args[1] . PHP_EOL;
+
+    if (!empty($argv)) {
+      // here left only options
+
+      foreach ($argv as $arg_key => $arg_value) {
+        if (substr($arg_value, 0, 1) != '-') {
+          // looks like an argument
+
+          // check for arguments
+          $arg_found = FALSE;
+          foreach ($params['arguments'] as $parg_key => $parg_value) {
+            // check for validation
+            if (array_key_exists('validate', $parg_value)) {
+              $arg_validate = $parg_value['validate'];
+              $arg_valid = $arg_validate($arg_value);
+              if ($arg_valid) {
+                $args[$parg_key] = $arg_valid;
+                $arg_found = TRUE;
+                break;
+              }
+            }
+          }
+          if (!$arg_found) {
+            // arg not mach any validations
+
+            // @todo think what to do with that
+          }
+
+        } else {
+          // looks like an option
+
+          // check for options
+          $arg_found = FALSE;
+          foreach ($params['options'] as $popt_key => $popt_value) {
+
+          }
+
+          // check for flags
+        }
+
+      }
     }
   }
-  // two+ args
-  elseif ($args_count >= 2) {
-    // two+ args: cmd, something
-    $cmd = match_cmd($args[1]);
-    if ($cmd) {
-      // check command have required args - skip for now
-      // check command have optional args
-      if (array_key_exists('optional_args', $commands[$cmd])) {
-        // get defenition of first arg
-        $cmd_arg_1 = reset($commands[$cmd]['optional_args']);
-        // check for validation
-        if (array_key_exists('validate', $cmd_arg_1)) {
-          $cmd_arg_validate = $cmd_arg_1['validate'];
-          // valid
-          if ($cmd_arg_validate($args[2])) {
-            // @todo check for other agrs
-            $cmd_cmd = $commands[$cmd]['cmd'];
-            $cmd_cmd($args[2]);
-          }
-          // not valid
-          else {
-            echo 'Argument ' . $args[2] . ' not valid for ' . $cmd . PHP_EOL;
-          }
-        }
-        // no validation
-        else {
-          // @todo check for other agrs
-          $cmd_cmd = $commands[$cmd]['cmd'];
-          $cmd_cmd($args[2]);
-        }
-        
-      }
-      // check command have flags
-      elseif (array_key_exists('flags', $commands[$cmd])) {
 
-      }
-      // too many args
-      else {
-        echo 'Too many arguments for ' . $args[1] . PHP_EOL;
-      }
-
-
-    }
-
-    // two+ args: cid, something
-
-    // two+ args: not mach
-  }
+  // no matter what haapened before it should be always same
+  $cmd_cmd($args);
 }
 
 // Main function
-
-handle_input($argv, $argc);
-
+resolve_args($argv, $argc);
