@@ -12,6 +12,7 @@ $path = exec('pwd');
 
 $user_config_file = $home . '/.config/smt/smt.yml';
 $current_config_file = $path . '/smt.yml';
+$global = FALSE;
 
 $project_info_file = __DIR__ . '/../composer.json';
 
@@ -36,7 +37,10 @@ function create_config_file() {
 function get_config_file() {
   global $user_config_file;
   global $current_config_file;
-  if (file_exists($current_config_file)) {
+  global $global;
+  if ($global) {
+    return $user_config_file;
+  } elseif (file_exists($current_config_file)) {
     return $current_config_file;
   }
   return $user_config_file;
@@ -267,6 +271,12 @@ $params['arguments']['cmd'] = [
   'validate' => 'match_cmd',
 ];
 
+// handled separately, listed here for generating help and pass validation as option
+$params['options']['global'] = [
+  'name' => 'Use config in user directory',
+  'key' => 'g',
+];
+
 $params['options']['verbose'] = [
   'name' => 'Verbose node',
   'key' => 'v',
@@ -282,9 +292,10 @@ $params['options']['yes'] = [
   'key' => 'y',
 ];
 
-$params['options']['global'] = [
-  'name' => 'Use config in user directory',
-  'key' => 'g',
+// listed here for generating help and pass validation as option
+$params['options']['help'] = [
+  'name' => 'Show help',
+  'key' => 'h',
 ];
 
 $params['flags']['password'] = [
@@ -330,7 +341,6 @@ $commands['add'] = [
     'add',
   ],
   'optional_args' => [
-    'global' => $params['options']['global'],
     'verbose' => $params['options']['verbose'],
   ],
   'cmd' => 'cmd_add', 
@@ -596,22 +606,17 @@ function cmd_status($args) {
 }
 
 function cmd_config($args) {
-  global $user_config_file;
-  if (array_key_exists('global', $args)) {
-    $config_file = $user_config_file;
-  } else {
-    $config_file = get_config_file();
-  }
+  $config_file = get_config_file();
   $config_cmd = '$EDITOR ' . $config_file;
   shell_exec($config_cmd);
   return;
 }
 
 function cmd_help($args) {
-  if (array_key_exists('cmd', $args)) {
+  if (isset($args['cmd'])) {
     $cmd = $args['cmd'];
   } else {
-    $cmd = FALSE;
+    $cmd = 'default';
   }
   // @todo
   echo '<Show help> cmd: ' . $cmd . PHP_EOL;
@@ -637,6 +642,16 @@ function cmd_info($args) {
   // @todo show as table "dependency version : status"
   foreach ($info as $key => $line) {
     echo $line . PHP_EOL;
+  }
+  return;
+}
+
+function is_global($argv) {
+  global $global;
+  foreach ($argv as $arg_key => $arg_value) {
+    if ($arg_value == '--global' || $arg_value == '-g') {
+      $global = TRUE;
+    }
   }
   return;
 }
@@ -680,13 +695,16 @@ function resolve_args($argv, $argc) {
             // check for arguments
             foreach ($params['arguments'] as $parg_key => $parg_value) {
               // check for validation
-              if (array_key_exists('validate', $parg_value)) {
+              if (isset($parg_value['validate'])) {
                 $arg_validate = $parg_value['validate'];
                 $arg_valid = $arg_validate($arg_value);
                 if ($arg_valid) {
-                  $args[$parg_key] = $arg_valid;
-                  $arg_found = TRUE;
-                  break;
+                  // check arg already exist
+                  if (!isset($args[$parg_key])) {
+                    $args[$parg_key] = $arg_valid;
+                    $arg_found = TRUE;
+                    break;
+                  }
                 }
               }
             }
@@ -703,45 +721,35 @@ function resolve_args($argv, $argc) {
             $arg_found = FALSE;
             // check for options
             foreach ($params['options'] as $popt_key => $popt_value) {
-              // check for long option
-              if ($arg_value == '--' . $popt_key) {
-                $args[$popt_key] = TRUE;
-                $arg_found = TRUE;
-                break;
+              // check for long or single short option
+              if ($arg_value == '--' . $popt_key || isset($popt_value['key']) && $arg_value == '-' . $popt_value['key']) {
+                // check arg already exist
+                if (!isset($args[$popt_key])) {
+                  $args[$popt_key] = TRUE;
+                  $arg_found = TRUE;
+                  break;
+                }
               }
-              // check for single short option
-              elseif (array_key_exists('key', $popt_value) && $arg_value == '-' . $popt_value['key']) {
-                $args[$popt_key] = TRUE;
-                $arg_found = TRUE;
-                break;
-              }
-              
+
               // @todo check for multiple short options
               // possible options (-vsyg)
             }
 
             // check for flags
             foreach ($params['flags'] as $pflg_key => $pflg_value) {
-              // check for long flag
-              if ($arg_value == '--' . $pflg_key) {
-                if (isset($argv[$arg_key + 1])) {
-                  $args[$pflg_key] = $argv[$arg_key + 1];
-                  $skip_next_arg = TRUE;
-                  $arg_found = TRUE;
-                  break;
-                }
-                
-              }
-              // check for short flag
-              elseif ($arg_value == '-' . $pflg_value['key']) {
-                if (isset($argv[$arg_key + 1])) {
-                  $args[$pflg_key] = $argv[$arg_key + 1];
-                  $skip_next_arg = TRUE;
-                  $arg_found = TRUE;
-                  break;
+              // check for long or short flag
+              if ($arg_value == '--' . $pflg_key || $arg_value == '-' . $pflg_value['key']) {
+                // check arg already exist
+                if (!isset($args[$pflg_key])) {
+                  if (isset($argv[$arg_key + 1])) {
+                    $args[$pflg_key] = $argv[$arg_key + 1];
+                    $skip_next_arg = TRUE;
+                    $arg_found = TRUE;
+                    break;
+                  }
                 }
               }
-              
+
               // @todo check for value goes right after key without space
               // possible flag (-psomepass)
 
@@ -764,9 +772,35 @@ function resolve_args($argv, $argc) {
     }
   }
 
+  // fallback for wrong command order
+  if ($cmd_cmd == $commands['default']['cmd'] && isset($args['cmd'])) {
+    $cmd = $args['cmd'];
+    $cmd_cmd = $commands[$cmd]['cmd'];
+    unset($args['cmd']);
+  }
+
+  // fallback for wrong command order for help
+  if ($cmd_cmd != $commands['help']['cmd'] && isset($args['cmd']) && $args['cmd'] == 'help' ||
+      $cmd_cmd != $commands['help']['cmd'] && isset($args['help'])) {
+    foreach ($commands as $cmd => $command_settings) {
+      if ($cmd_cmd == $command_settings['cmd']) {
+        $args['cmd'] = $cmd;
+        $cmd_cmd = $commands['help']['cmd'];
+        break;
+      }
+    }
+  }
+
+  // check for double command
+  if (isset($args['cmd']) && $cmd_cmd == $commands[$args['cmd']]['cmd']) {
+    echo 'Unexpected argument for ' . $args['cmd'] . PHP_EOL;
+    return;
+  }
+
   // no matter what haapened before, action should be always only this
   return $cmd_cmd($args);
 }
 
 // Main function
+is_global($argv);
 resolve_args($argv, $argc);
