@@ -676,8 +676,8 @@ function resolve_args($argv, $argc) {
           if (substr($arg_value, 0, 1) != '-') {
             // looks like an argument
 
-            // check for arguments
             $arg_found = FALSE;
+            // check for arguments
             foreach ($params['arguments'] as $parg_key => $parg_value) {
               // check for validation
               if (array_key_exists('validate', $parg_value)) {
@@ -690,17 +690,18 @@ function resolve_args($argv, $argc) {
                 }
               }
             }
+
             if (!$arg_found) {
               // arg not mach any validations
-
-              // @todo think what to do with that
+              echo 'Unknown command or argument ' . $arg_value . PHP_EOL;
+              return;
             }
 
           } else {
             // looks like an option
 
-            // check for options
             $arg_found = FALSE;
+            // check for options
             foreach ($params['options'] as $popt_key => $popt_value) {
               // check for long option
               if ($arg_value == '--' . $popt_key) {
@@ -715,11 +716,45 @@ function resolve_args($argv, $argc) {
                 break;
               }
               
-              // check for multiple short options
+              // @todo check for multiple short options
+              // possible options (-vsyg)
             }
 
             // check for flags
-            // check and use $arg_key + 1 for value
+            foreach ($params['flags'] as $pflg_key => $pflg_value) {
+              // check for long flag
+              if ($arg_value == '--' . $pflg_key) {
+                if (isset($argv[$arg_key + 1])) {
+                  $args[$pflg_key] = $argv[$arg_key + 1];
+                  $skip_next_arg = TRUE;
+                  $arg_found = TRUE;
+                  break;
+                }
+                
+              }
+              // check for short flag
+              elseif ($arg_value == '-' . $pflg_value['key']) {
+                if (isset($argv[$arg_key + 1])) {
+                  $args[$pflg_key] = $argv[$arg_key + 1];
+                  $skip_next_arg = TRUE;
+                  $arg_found = TRUE;
+                  break;
+                }
+              }
+              
+              // @todo check for value goes right after key without space
+              // possible flag (-psomepass)
+
+              // @todo check for value goes right after key with equal symbol
+              // possible flag (-p=somepass)
+            }
+
+            if (!$arg_found) {
+              // arg not mach any options
+              echo 'Unknown option ' . $arg_value . PHP_EOL;
+              return;
+            }
+            
           }
         } else {
           // reset skip
@@ -729,8 +764,8 @@ function resolve_args($argv, $argc) {
     }
   }
 
-  // no matter what haapened before it should be always same
-  $cmd_cmd($args);
+  // no matter what haapened before, action should be always only this
+  return $cmd_cmd($args);
 }
 
 // Main function
