@@ -28,27 +28,30 @@ function init() {
   return;
 }
 
-function create_config_file() {
-  // @todo create user config file
-  echo '<Create config file>' . PHP_EOL;
-  return;
-}
-
 function get_config_file() {
   global $user_config_file;
   global $current_config_file;
   global $global;
+  // set global option
   if ($global) {
     return $user_config_file;
-  } elseif (file_exists($current_config_file)) {
+  }
+  // no global option, but exist config in current folder 
+  elseif (file_exists($current_config_file)) {
     return $current_config_file;
   }
   return $user_config_file;
 }
 
-function get_config() {
-  $config_file = get_config_file();
-  return Yaml::parseFile($config_file);
+function get_config($config_file = FALSE) {
+  if (!$config_file) {
+    $config_file = get_config_file();
+  }
+  if (file_exists($config_file)) {
+    return Yaml::parseFile($config_file);
+  } else {
+    return array();
+  }
 }
 
 function set_config($config, $config_file) {
@@ -58,7 +61,11 @@ function set_config($config, $config_file) {
 
 function get_connections() {
   $config = get_config();
-  return $config['connections'];
+  if (isset($config['connections'])) {
+    return $config['connections'];
+  } else {
+    return array();
+  }
 }
 
 function get_connection_settings($cid) {
@@ -66,22 +73,29 @@ function get_connection_settings($cid) {
   return $config['connections'][$cid];
 }
 
-function set_connection_settings($cid, $connection_settings, $use_current_config_file = FALSE) {
+function set_connection_settings($cid, $connection_settings, $use_current_dir = FALSE) {
   global $user_config_file;
   global $current_config_file;
-  $config = get_config();
+  // save to current dir, no config in current dir, shouldnot load global
+  if ($use_current_dir) {
+    $config = get_config($current_config_file);
+  } else {
+    $config = get_config();
+  }
   $connection_exist = FALSE;
-  foreach ($config['connections'] as $key => $value) {
-    if ($key == $cid) {
-      // @todo ask for rewrite
-      $config['connections'][$key] = $connection_settings;
-      $connection_exist = TRUE;
+  if (isset($config['connections'])) {
+    foreach ($config['connections'] as $key => $value) {
+      if ($key == $cid) {
+        // @todo ask for rewrite
+        $config['connections'][$key] = $connection_settings;
+        $connection_exist = TRUE;
+      }
     }
   }
   if (!$connection_exist) {
     $config['connections'][$cid] = $connection_settings;
   }
-  if ($use_current_config_file) {
+  if ($use_current_dir) {
     $config_file = $current_config_file;
   } else {
     $config_file = $user_config_file;
@@ -168,6 +182,7 @@ function green($text) {
 
 function show_connections($mounted_only = FALSE) {
   $connections = get_connections();
+  // @todo check that no connections exist
   $mounts = get_mounts();
   $i = 1;
   $cids = [];
@@ -455,14 +470,20 @@ $commands['ssh'] = [
 
 // command functions
 function cmd_mount($args) {
-  if (array_key_exists('cid', $args)) {
+  if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
     $cids = show_connections();
     $input = readline('Number or name of connection for mount: ');
     $cid = validate_input($input, $cids);
   }
-  $cmd = gen_mount_cmd($cid);
+  if (isset($args['password'])) {
+    $password = $args['password'];
+  } else {
+    $password = FALSE;
+  }
+  // @todo if only one connection in config mount automatically
+  $cmd = gen_mount_cmd($cid, $password);
   $connection_settings = get_connection_settings($cid);
   $success_message = '';
   if (isset($connection_settings['user'])) {
@@ -474,7 +495,8 @@ function cmd_mount($args) {
 }
 
 function cmd_unmount($args) {
-  if (array_key_exists('cid', $args)) {
+  // @todo check that something is mounted
+  if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
     $cids = show_connections(TRUE);
@@ -493,6 +515,7 @@ function cmd_unmount($args) {
 }
 
 function cmd_add($args) {
+  global $global;
   $connection_settings = [];
   $connection_settings['server'] = '';
   while (!$connection_settings['server']) {
@@ -522,9 +545,11 @@ function cmd_add($args) {
   echo PHP_EOL;
   // @todo while loop
   $save_config = readline('Seve config (y, [Enter] - to user directory / c - to current directory / n - cancel): ');
-  if (!$save_config || $save_config == 'y' || $save_config == 'Y') {
+  if (!$save_config || $save_config == 'y' || $save_config == 'Y' || $save_config == 'Yes' || $save_config == 'yes' || $save_config == 'YES') {
+    $global = TRUE;
     return set_connection_settings($cid, $connection_settings);
   } elseif ($save_config == 'c' || $save_config == 'C') {
+    $global = FALSE;
     return set_connection_settings($cid, $connection_settings, TRUE);
   } else {
     return;
@@ -532,7 +557,7 @@ function cmd_add($args) {
 }
 
 function cmd_remove($args) {
-  if (array_key_exists('cid', $args)) {
+  if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
     $cids = show_connections();
@@ -543,7 +568,7 @@ function cmd_remove($args) {
 }
 
 function cmd_list($args) {
-  if (array_key_exists('cid', $args)) {
+  if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
     $cids = show_connections();
@@ -557,7 +582,7 @@ function cmd_list($args) {
 
 function cmd_cd($args) {
   global $home;
-  if (array_key_exists('cid', $args)) {
+  if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
     $cids = show_connections();
@@ -582,7 +607,7 @@ function cmd_cd($args) {
 }
 
 function cmd_ssh($args) {
-  if (array_key_exists('cid', $args)) {
+  if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
     $cids = show_connections();

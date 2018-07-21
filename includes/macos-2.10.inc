@@ -9,9 +9,13 @@ $preferences['default_options'] = array(
   'defer_permissions',
 );
 
-function gen_mount_cmd($cid) {
+function gen_mount_cmd($cid, $password = FALSE) {
   global $preferences;
   $connection_settings = get_connection_settings($cid);
+  // use provided password
+  if ($password) {
+    $connection_settings['password'] = $password;
+  }
   $options = [];
   $cmd = [];
 
