@@ -76,7 +76,7 @@ function get_connection_settings($cid) {
 function set_connection_settings($cid, $connection_settings, $use_current_dir = FALSE) {
   global $user_config_file;
   global $current_config_file;
-  // save to current dir, no config in current dir, shouldnot load global
+  // save to current dir, no config in current dir, should not load global
   if ($use_current_dir) {
     $config = get_config($current_config_file);
   } else {
@@ -180,10 +180,41 @@ function green($text) {
   return "\033[32m" . $text . "\033[39m";
 }
 
-function show_connections($mounted_only = FALSE) {
+function choose_connection($mounted_only = FALSE, $show_only = FALSE) {
   $connections = get_connections();
-  // @todo check that no connections exist
+
+  // no connections
+  if (empty($connections)) {
+    echo 'No saved connections' . PHP_EOL;
+    // not error
+    exit (0);
+  }
+
+  // one connection, not just show
+  if (count($connections) == 1 && !$show_only) {
+    return key($connections);
+  }
+
   $mounts = get_mounts();
+
+  // no mounts
+  if ($mounted_only) {
+    if (empty($mounts)) {
+      echo 'No mounted connections' . PHP_EOL;
+      // not error
+      exit (0);
+    }
+  }
+
+  // one mount, should work automaticaly only when set only one connection 
+  if ($mounted_only && count($connections) == 1) {
+    if (count($mounts) == 1) {
+      return $mounts[0];
+    }
+  }
+
+  // multiple connections
+
   $i = 1;
   $cids = [];
 
@@ -215,7 +246,14 @@ function show_connections($mounted_only = FALSE) {
   $table->setPadding(2);
   $table->hideBorder();
   $table->display();
-  return $cids;
+
+  if (!$show_only) {
+    $input = readline('Number or name of connection: ');
+    $cid = validate_input($input, $cids);
+    return $cid;
+  }
+
+  exit (0);
 }
 
 function show_connection_settings($connection_settings) {
@@ -269,6 +307,29 @@ function validate_input($input, $cids) {
     }
   }
   return $cid;
+}
+
+function read_input($prompt, $default_value = NULL, $requred = FALSE, $silent = FALSE) {
+  if ($requred) {
+    $input = '';
+    while (!$input) {
+      if ($silent) {
+        $input = readline_silent($prompt);
+      } else {
+        $input = readline($prompt);
+      }
+    }
+  } else {
+    if ($silent) {
+      $input = readline_silent($prompt);
+    } else {
+      $input = readline($prompt);
+    }
+    if (!$input) {
+      $input = $default_value;
+    }
+  }
+  return $input;
 }
 
 // params definition
@@ -473,16 +534,14 @@ function cmd_mount($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
-    $cids = show_connections();
-    $input = readline('Number or name of connection for mount: ');
-    $cid = validate_input($input, $cids);
+    $cid = choose_connection();
   }
   if (isset($args['password'])) {
     $password = $args['password'];
   } else {
     $password = FALSE;
   }
-  // @todo if only one connection in config mount automatically
+
   $cmd = gen_mount_cmd($cid, $password);
   $connection_settings = get_connection_settings($cid);
   $success_message = '';
@@ -499,10 +558,9 @@ function cmd_unmount($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
-    $cids = show_connections(TRUE);
-    $input = readline('Number or name of connection for unmount: ');
-    $cid = validate_input($input, $cids);
+    $cid = choose_connection(TRUE);
   }
+
   $cmd = gen_unmount_cmd($cid);
   $connection_settings = get_connection_settings($cid);
   $success_message = '';
@@ -517,29 +575,25 @@ function cmd_unmount($args) {
 function cmd_add($args) {
   global $global;
   $connection_settings = [];
-  $connection_settings['server'] = '';
-  while (!$connection_settings['server']) {
-    $connection_settings['server'] = readline('Server (required): ');
-  }
-  $connection_settings['port'] = readline('Port (default "22"): ');
-  $connection_settings['user'] = readline('Username: ');
-  $connection_settings['password'] = readline_silent('Password (Input hidden. If password not provided, it will be asked every time on connect. Leave blank for key auth): ');
-  $connection_settings['key'] = readline('Path to key file (Usually "~/.ssh/id_rsa". Leave blank for password auth): ');
+  $connection_settings['server'] = read_input('Server (required): ', NULL, TRUE);
+  $connection_settings['port'] = read_input('Port (default "22"): ');
+  $connection_settings['user'] = read_input('Username: ');
+  $connection_settings['password'] = read_input('Password (Input hidden. If password not provided, it will be asked every time on connect. Leave blank for key auth): ', NULL, FALSE, TRUE);
+  $connection_settings['key'] = read_input('Path to key file (Usually "~/.ssh/id_rsa". Leave blank for password auth): ');
+
   $default_mount = '~/mnt/' . $connection_settings['server'];
-  $connection_settings['mount'] = readline('Mount directory (Required for mounting. [Enter] - "' . $default_mount . '"): ');
-  if (!$connection_settings['mount']) {
-    $connection_settings['mount'] = $default_mount;
-  }
-  $connection_settings['remote'] = readline('Remote directory: ');
+  $connection_settings['mount'] = read_input('Mount directory (Required for mounting. [Enter] - "' . $default_mount . '"): ', $default_mount);
+
+  $connection_settings['remote'] = read_input('Remote directory: ');
+ 
   $options = readline('Mount options (separated by comma): ');
   $options = explode (',', $options);
   $options = array_map('trim', $options);
   $connection_settings['options'] = array_filter($options);
-  $connection_settings['title'] = readline('Connection name ([Enter] - "' . $connection_settings['server'] . '"): ');
-  if (!$connection_settings['title']) {
-    $connection_settings['title'] = $connection_settings['server'];
-  }
+
+  $connection_settings['title'] = read_input('Connection name ([Enter] - "' . $connection_settings['server'] . '"): ', $connection_settings['server']);
   $cid = $connection_settings['title'];
+
   echo PHP_EOL;
   show_connection_settings($connection_settings);
   echo PHP_EOL;
@@ -560,10 +614,9 @@ function cmd_remove($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
-    $cids = show_connections();
-    $input = readline('Number or name of connection to remove: ');
-    $cid = validate_input($input, $cids);
+    $cid = choose_connection();
   }
+
   return remove_connection_settings($cid);
 }
 
@@ -571,10 +624,9 @@ function cmd_list($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
-    $cids = show_connections();
-    $input = readline('Number or name of connection to show: ');
-    $cid = validate_input($input, $cids);
+    $cid = choose_connection();
   }
+
   $connection_settings = get_connection_settings($cid);
   show_connection_settings($connection_settings);
   return;
@@ -585,10 +637,9 @@ function cmd_cd($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
-    $cids = show_connections();
-    $input = readline('Number or name of connection: ');
-    $cid = validate_input($input, $cids);
+    $cid = choose_connection();
   }
+
   $connection_settings = get_connection_settings($cid);
   if (isset($connection_settings['mount'])) {
     if (substr($connection_settings['mount'], 0, 1) == '~') {
@@ -610,10 +661,9 @@ function cmd_ssh($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   } else {
-    $cids = show_connections();
-    $input = readline('Number or name of connection: ');
-    $cid = validate_input($input, $cids);
+    $cid = choose_connection();
   }
+
   $connection_settings = get_connection_settings($cid);
 
   $ssh_cmd = 'ssh ';
@@ -626,7 +676,7 @@ function cmd_ssh($args) {
 }
 
 function cmd_status($args) {
-  show_connections();
+  choose_connection(FALSE, TRUE);
   return;
 }
 
@@ -670,6 +720,8 @@ function cmd_info($args) {
   }
   return;
 }
+
+// handle input
 
 function is_global($argv) {
   global $global;
@@ -827,5 +879,6 @@ function resolve_args($argv, $argc) {
 }
 
 // Main function
+
 is_global($argv);
 resolve_args($argv, $argc);
