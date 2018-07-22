@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Provides main functionality.
+ */
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\Yaml\Yaml;
@@ -22,12 +27,30 @@ require_once __DIR__ . '/../includes/' . $environment . '.inc';
 
 // Functions
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function init() {
   // @todo detect environment
   echo '<Init>' . PHP_EOL;
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function get_config_file() {
   global $user_config_file;
   global $current_config_file;
@@ -43,43 +66,91 @@ function get_config_file() {
   return $user_config_file;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function get_config($config_file = FALSE) {
   if (!$config_file) {
     $config_file = get_config_file();
   }
   if (file_exists($config_file)) {
     return Yaml::parseFile($config_file);
-  } else {
+  }
+  else {
     return array();
   }
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
   return file_put_contents($config_file, $yaml);
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function get_connections() {
   $config = get_config();
   if (isset($config['connections'])) {
     return $config['connections'];
-  } else {
+  }
+  else {
     return array();
   }
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function get_connection_settings($cid) {
   $config = get_config();
   return $config['connections'][$cid];
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function set_connection_settings($cid, $connection_settings, $use_current_dir = FALSE) {
   global $user_config_file;
   global $current_config_file;
   // save to current dir, no config in current dir, should not load global
   if ($use_current_dir) {
     $config = get_config($current_config_file);
-  } else {
+  }
+  else {
     $config = get_config();
   }
   $connection_exist = FALSE;
@@ -97,12 +168,22 @@ function set_connection_settings($cid, $connection_settings, $use_current_dir = 
   }
   if ($use_current_dir) {
     $config_file = $current_config_file;
-  } else {
+  }
+  else {
     $config_file = $user_config_file;
   }
   return set_config($config, $config_file);
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function remove_connection_settings($cid) {
   $config_file = get_config_file();
   $config = get_config();
@@ -114,13 +195,23 @@ function remove_connection_settings($cid) {
   return set_config($config, $config_file);
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function get_cid($mount_point) {
   global $home;
   $connections = get_connections();
   foreach ($connections as $cid => $connection_settings) {
     if ($mount_point == $connection_settings['mount']) {
       return $cid;
-    } elseif (substr($connection_settings['mount'], 0, 1) == '~') {
+    }
+    elseif (substr($connection_settings['mount'], 0, 1) == '~') {
       $absolute_path = $home . substr($connection_settings['mount'], 1);
       if ($mount_point == $absolute_path) {
         return $cid;
@@ -130,6 +221,15 @@ function get_cid($mount_point) {
   return FALSE;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function match_cid($input) {
   $connections = get_connections();
   foreach ($connections as $cid => $connection_settings) {
@@ -140,6 +240,15 @@ function match_cid($input) {
   return FALSE;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function match_cmd($input) {
   global $commands;
   foreach ($commands as $cmd => $command_settings) {
@@ -150,6 +259,15 @@ function match_cmd($input) {
   return FALSE;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function run_cmd($cmd, $success_message = 'Ok') {
   $output = [];
   $result_code = 0;
@@ -161,7 +279,16 @@ function run_cmd($cmd, $success_message = 'Ok') {
   return $run;
 }
 
-// https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
+/**
+ * Description of function.
+ * https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function readline_silent($prompt = '') {
   $command = "/usr/bin/env bash -c 'echo OK'";
   if (rtrim(shell_exec($command)) !== 'OK') {
@@ -172,14 +299,32 @@ function readline_silent($prompt = '') {
     . addslashes($prompt)
     . "\" mypassword && echo \$mypassword'";
   $input = rtrim(shell_exec($command));
-  echo "\n";
+  echo PHP_EOL;
   return $input;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function green($text) {
   return "\033[32m" . $text . "\033[39m";
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function choose_connection($mounted_only = FALSE, $show_only = FALSE) {
   $connections = get_connections();
 
@@ -233,7 +378,8 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE) {
       ]);
       $cids[$i] = $cid;
       $i++;
-    } elseif (!$mounted_only) {
+    }
+    elseif (!$mounted_only) {
       $table->addRow([
         $i,
         $cid,
@@ -256,6 +402,15 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE) {
   exit (0);
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function show_connection_settings($connection_settings) {
   $table = new ConsoleTable();
   $table->setHeaders([
@@ -268,12 +423,14 @@ function show_connection_settings($connection_settings) {
         $key,
         implode(',', $value),
       ]);
-    } elseif ($key == 'password' && $value) {
+    }
+    elseif ($key == 'password' && $value) {
       $table->addRow([
         $key,
         '[password]',
       ]);
-    } else {
+    }
+    else {
       $table->addRow([
         $key,
         $value,
@@ -286,6 +443,15 @@ function show_connection_settings($connection_settings) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function validate_input($input, $cids) {
   if (is_numeric($input)) {
     $input = intval($input);
@@ -309,20 +475,32 @@ function validate_input($input, $cids) {
   return $cid;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function read_input($prompt, $default_value = NULL, $requred = FALSE, $silent = FALSE) {
   if ($requred) {
     $input = '';
     while (!$input) {
       if ($silent) {
         $input = readline_silent($prompt);
-      } else {
+      }
+      else {
         $input = readline($prompt);
       }
     }
-  } else {
+  }
+  else {
     if ($silent) {
       $input = readline_silent($prompt);
-    } else {
+    }
+    else {
       $input = readline($prompt);
     }
     if (!$input) {
@@ -530,15 +708,27 @@ $commands['ssh'] = [
 ];
 
 // command functions
+
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_mount($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
-  } else {
+  }
+  else {
     $cid = choose_connection();
   }
   if (isset($args['password'])) {
     $password = $args['password'];
-  } else {
+  }
+  else {
     $password = FALSE;
   }
 
@@ -553,11 +743,21 @@ function cmd_mount($args) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_unmount($args) {
   // @todo check that something is mounted
   if (isset($args['cid'])) {
     $cid = $args['cid'];
-  } else {
+  }
+  else {
     $cid = choose_connection(TRUE);
   }
 
@@ -572,6 +772,15 @@ function cmd_unmount($args) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_add($args) {
   global $global;
   $connection_settings = [];
@@ -602,28 +811,50 @@ function cmd_add($args) {
   if (!$save_config || $save_config == 'y' || $save_config == 'Y' || $save_config == 'Yes' || $save_config == 'yes' || $save_config == 'YES') {
     $global = TRUE;
     return set_connection_settings($cid, $connection_settings);
-  } elseif ($save_config == 'c' || $save_config == 'C') {
+  }
+  elseif ($save_config == 'c' || $save_config == 'C') {
     $global = FALSE;
     return set_connection_settings($cid, $connection_settings, TRUE);
-  } else {
+  }
+  else {
     return;
   }
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_remove($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
-  } else {
+  }
+  else {
     $cid = choose_connection();
   }
 
   return remove_connection_settings($cid);
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_list($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
-  } else {
+  }
+  else {
     $cid = choose_connection();
   }
 
@@ -632,11 +863,21 @@ function cmd_list($args) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_cd($args) {
   global $home;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
-  } else {
+  }
+  else {
     $cid = choose_connection();
   }
 
@@ -644,7 +885,8 @@ function cmd_cd($args) {
   if (isset($connection_settings['mount'])) {
     if (substr($connection_settings['mount'], 0, 1) == '~') {
       $path = $home . substr($connection_settings['mount'], 1);
-    } else {
+    }
+    else {
       $path = $connection_settings['mount'];
     }
     $cd_cmd = 'cd ' . $path;
@@ -657,10 +899,20 @@ function cmd_cd($args) {
   }
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_ssh($args) {
   if (isset($args['cid'])) {
     $cid = $args['cid'];
-  } else {
+  }
+  else {
     $cid = choose_connection();
   }
 
@@ -675,11 +927,29 @@ function cmd_ssh($args) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_status($args) {
   choose_connection(FALSE, TRUE);
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_config($args) {
   $config_file = get_config_file();
   $config_cmd = '$EDITOR ' . $config_file;
@@ -687,10 +957,20 @@ function cmd_config($args) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_help($args) {
   if (isset($args['cmd'])) {
     $cmd = $args['cmd'];
-  } else {
+  }
+  else {
     $cmd = 'default';
   }
   // @todo
@@ -698,6 +978,15 @@ function cmd_help($args) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_version($args) {
   global $project_info_file;
   $project_info = file_get_contents($project_info_file);
@@ -706,6 +995,15 @@ function cmd_version($args) {
   return;
 }
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function cmd_info($args) {
   global $project_info_file;
   $info = [];
@@ -723,6 +1021,15 @@ function cmd_info($args) {
 
 // handle input
 
+/**
+ * Description of function.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function is_global($argv) {
   global $global;
   foreach ($argv as $arg_key => $arg_value) {
@@ -733,7 +1040,15 @@ function is_global($argv) {
   return;
 }
 
-// parse script args
+/**
+ * Parse script args.
+ *
+ * @param $var1
+ *  Description of $var1.
+ *
+ * @return
+ *  Description of return.
+ */
 function resolve_args($argv, $argc) {
   global $commands;
   global $params;
@@ -742,7 +1057,8 @@ function resolve_args($argv, $argc) {
   if ($argc == 1) {
     // no args
     $cmd_cmd = $commands['default']['cmd'];
-  } else {
+  }
+  else {
     // has args
 
     // remove first arg - script name
@@ -754,7 +1070,8 @@ function resolve_args($argv, $argc) {
       $cmd_cmd = $commands[$cmd]['cmd'];
       // command found, remove it from args
       array_shift($argv);
-    } else {
+    }
+    else {
       $cmd_cmd = $commands['default']['cmd'];
     }
 
@@ -792,7 +1109,8 @@ function resolve_args($argv, $argc) {
               return;
             }
 
-          } else {
+          }
+          else {
             // looks like an option
 
             $arg_found = FALSE;
@@ -841,7 +1159,8 @@ function resolve_args($argv, $argc) {
             }
             
           }
-        } else {
+        }
+        else {
           // reset skip
           $skip_next_arg = FALSE;
         }
