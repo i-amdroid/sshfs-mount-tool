@@ -15,30 +15,39 @@ use LucidFrame\Console\ConsoleTable;
 $home = $_SERVER['HOME'];
 $path = exec('pwd');
 
-$user_config_file = $home . '/.config/smt/smt.yml';
-$current_config_file = $path . '/smt.yml';
-$global = FALSE;
+$preferences['user_config_file'] = $home . '/.config/smt/smt.yml';
+$preferences['current_config_file'] = $path . '/smt.yml';
+$preferences['project_info_file'] = __DIR__ . '/../composer.json';
 
-$project_info_file = __DIR__ . '/../composer.json';
+$preferences['os_functions_inc'] = init();
+require_once __DIR__ . '/../includes/' . $preferences['os_functions_inc'];
 
-// @todo detect environment in init()
-$environment = 'macos-2.10';
-require_once __DIR__ . '/../includes/' . $environment . '.inc';
+$preferences['global'] = FALSE;
+$preferences['verbose'] = FALSE;
+$preferences['silent'] = FALSE;
+$preferences['yes'] = FALSE;
 
 // Functions
 
 /**
- * Description of function.
- *
- * @param $var1
- *  Description of $var1.
+ * Determines OS and return corresponding inc file.
  *
  * @return
- *  Description of return.
+ *  Filename of inc file.
  */
 function init() {
-  // @todo detect environment
-  echo '<Init>' . PHP_EOL;
+  switch (PHP_OS) {
+    case 'Darwin':
+      return 'macos.inc';
+      break;
+    case 'Linux':
+      return 'nix.inc';
+      break;
+    default:
+      echo 'Unsupported operation system' . PHP_EOL;
+      exit(1);
+      break;
+  }
   return;
 }
 
@@ -52,18 +61,16 @@ function init() {
  *  Description of return.
  */
 function get_config_file() {
-  global $user_config_file;
-  global $current_config_file;
-  global $global;
+  global $preferences;
   // set global option
-  if ($global) {
-    return $user_config_file;
+  if ($preferences['global']) {
+    return $preferences['user_config_file'];
   }
   // no global option, but exist config in current folder 
-  elseif (file_exists($current_config_file)) {
-    return $current_config_file;
+  elseif (file_exists($preferences['current_config_file'])) {
+    return $preferences['current_config_file'];
   }
-  return $user_config_file;
+  return $preferences['user_config_file'];
 }
 
 /**
@@ -144,11 +151,10 @@ function get_connection_settings($cid) {
  *  Description of return.
  */
 function set_connection_settings($cid, $connection_settings, $use_current_dir = FALSE) {
-  global $user_config_file;
-  global $current_config_file;
+  global $preferences;
   // save to current dir, no config in current dir, should not load global
   if ($use_current_dir) {
-    $config = get_config($current_config_file);
+    $config = get_config($preferences['current_config_file']);
   }
   else {
     $config = get_config();
@@ -167,10 +173,10 @@ function set_connection_settings($cid, $connection_settings, $use_current_dir = 
     $config['connections'][$cid] = $connection_settings;
   }
   if ($use_current_dir) {
-    $config_file = $current_config_file;
+    $config_file = $preferences['current_config_file'];
   }
   else {
-    $config_file = $user_config_file;
+    $config_file = $preferences['user_config_file'];
   }
   return set_config($config, $config_file);
 }
@@ -782,7 +788,7 @@ function cmd_unmount($args) {
  *  Description of return.
  */
 function cmd_add($args) {
-  global $global;
+  global $preferences;
   $connection_settings = [];
   $connection_settings['server'] = read_input('Server (required): ', NULL, TRUE);
   $connection_settings['port'] = read_input('Port (default "22"): ');
@@ -809,11 +815,11 @@ function cmd_add($args) {
   // @todo while loop
   $save_config = readline('Seve config (y, [Enter] - to user directory / c - to current directory / n - cancel): ');
   if (!$save_config || $save_config == 'y' || $save_config == 'Y' || $save_config == 'Yes' || $save_config == 'yes' || $save_config == 'YES') {
-    $global = TRUE;
+    $preferences['global'] = TRUE;
     return set_connection_settings($cid, $connection_settings);
   }
   elseif ($save_config == 'c' || $save_config == 'C') {
-    $global = FALSE;
+    $preferences['global'] = FALSE;
     return set_connection_settings($cid, $connection_settings, TRUE);
   }
   else {
@@ -988,8 +994,8 @@ function cmd_help($args) {
  *  Description of return.
  */
 function cmd_version($args) {
-  global $project_info_file;
-  $project_info = file_get_contents($project_info_file);
+  global $preferences;
+  $project_info = file_get_contents($preferences['project_info_file']);
   $project_info = json_decode($project_info, true);
   echo $project_info['version'] . PHP_EOL;
   return;
@@ -1005,9 +1011,9 @@ function cmd_version($args) {
  *  Description of return.
  */
 function cmd_info($args) {
-  global $project_info_file;
+  global $preferences;
   $info = [];
-  $project_info = file_get_contents($project_info_file);
+  $project_info = file_get_contents($preferences['project_info_file']);
   $project_info = json_decode($project_info, true);
   $info[] = 'SSHFS Mount Tool v' . $project_info['version'];
   exec('sshfs --version 2> /dev/null', $info);
@@ -1031,10 +1037,10 @@ function cmd_info($args) {
  *  Description of return.
  */
 function is_global($argv) {
-  global $global;
+  global $preferences;
   foreach ($argv as $arg_key => $arg_value) {
     if ($arg_value == '--global' || $arg_value == '-g') {
-      $global = TRUE;
+      $preferences['global'] = TRUE;
     }
   }
   return;

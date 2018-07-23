@@ -22,7 +22,7 @@ function gen_mount_cmd($cid, $password = FALSE) {
   $options[] = 'volname=' . $connection_settings['title'];
   $options = array_merge($options, $preferences['default_options']);
   // if ($connection_settings['options']) {
-  if (array_key_exists('options', $connection_settings)) {
+  if (isset($connection_settings['options'])) {
     $options = array_merge($options, $connection_settings['options']);
   }
   if ($connection_settings['password']) {
