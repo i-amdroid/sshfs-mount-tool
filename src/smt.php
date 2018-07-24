@@ -12,20 +12,17 @@ use LucidFrame\Console\ConsoleTable;
 
 // Variables
 
-$home = $_SERVER['HOME'];
-$path = exec('pwd');
+$preferences['home_path'] = $_SERVER['HOME'];
+$preferences['current_path'] = exec('pwd');
 
-$preferences['user_config_file'] = $home . '/.config/smt/smt.yml';
-$preferences['current_config_file'] = $path . '/smt.yml';
+$preferences['user_config_file'] = $preferences['home_path'] . '/.config/smt/smt.yml';
+$preferences['current_config_file'] = $preferences['current_path'] . '/smt.yml';
 $preferences['project_info_file'] = __DIR__ . '/../composer.json';
 
 $preferences['os_functions_inc'] = init();
 require_once __DIR__ . '/../includes/' . $preferences['os_functions_inc'];
 
 $preferences['global'] = FALSE;
-$preferences['verbose'] = FALSE;
-$preferences['silent'] = FALSE;
-$preferences['yes'] = FALSE;
 
 // Functions
 
@@ -105,7 +102,13 @@ function get_config($config_file = FALSE) {
  */
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
-  return file_put_contents($config_file, $yaml);
+  if (file_put_contents($config_file, $yaml)) {
+    return TRUE;
+  }
+  else {
+    echo 'Error saving configuration.' . PHP_EOL;
+    exit(1);
+  }
 }
 
 /**
@@ -211,14 +214,14 @@ function remove_connection_settings($cid) {
  *  Description of return.
  */
 function get_cid($mount_point) {
-  global $home;
+  global $preferences;
   $connections = get_connections();
   foreach ($connections as $cid => $connection_settings) {
     if ($mount_point == $connection_settings['mount']) {
       return $cid;
     }
     elseif (substr($connection_settings['mount'], 0, 1) == '~') {
-      $absolute_path = $home . substr($connection_settings['mount'], 1);
+      $absolute_path = $preferences['home_path'] . substr($connection_settings['mount'], 1);
       if ($mount_point == $absolute_path) {
         return $cid;
       }
@@ -331,12 +334,14 @@ function green($text) {
  * @return
  *  Description of return.
  */
-function choose_connection($mounted_only = FALSE, $show_only = FALSE) {
+function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = FALSE) {
   $connections = get_connections();
 
   // no connections
   if (empty($connections)) {
-    echo 'No saved connections' . PHP_EOL;
+    if (!$silent) {
+      echo 'No saved connections' . PHP_EOL;
+    }
     // not error
     exit (0);
   }
@@ -351,13 +356,15 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE) {
   // no mounts
   if ($mounted_only) {
     if (empty($mounts)) {
-      echo 'No mounted connections' . PHP_EOL;
+      if (!$silent) {
+        echo 'No mounted connections' . PHP_EOL;
+      }
       // not error
       exit (0);
     }
   }
 
-  // one mount, should work automaticaly only when set only one connection 
+  // one mount, should work automaticaly only when exist only one connection in config file
   if ($mounted_only && count($connections) == 1) {
     if (count($mounts) == 1) {
       return $mounts[0];
@@ -365,7 +372,6 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE) {
   }
 
   // multiple connections
-
   $i = 1;
   $cids = [];
 
@@ -490,11 +496,12 @@ function validate_input($input, $cids) {
  * @return
  *  Description of return.
  */
-function read_input($prompt, $default_value = NULL, $requred = FALSE, $silent = FALSE) {
+function read_input($prompt, $default_value = NULL, $requred = FALSE, $hidden = FALSE) {
+
   if ($requred) {
     $input = '';
     while (!$input) {
-      if ($silent) {
+      if ($hidden) {
         $input = readline_silent($prompt);
       }
       else {
@@ -503,7 +510,7 @@ function read_input($prompt, $default_value = NULL, $requred = FALSE, $silent = 
     }
   }
   else {
-    if ($silent) {
+    if ($hidden) {
       $input = readline_silent($prompt);
     }
     else {
@@ -725,11 +732,15 @@ $commands['ssh'] = [
  *  Description of return.
  */
 function cmd_mount($args) {
+
+  $silent = (isset($args['silent'])) ? true : false;
+  $verbose = (isset($args['verbose'])) ? true : false;
+
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
   else {
-    $cid = choose_connection();
+    $cid = choose_connection(FALSE, FALSE, $silent);
   }
   if (isset($args['password'])) {
     $password = $args['password'];
@@ -745,8 +756,15 @@ function cmd_mount($args) {
     $success_message .= $connection_settings['user'] . '@';
   }
   $success_message .= $connection_settings['server'] . ' ' . green('mounted') . ' to ' . $connection_settings['mount'] . PHP_EOL;
-  echo run_cmd($cmd, $success_message);
-  return;
+  $run = run_cmd($cmd, $success_message);
+  if (!$silent) {
+    if ($verbose) {
+      $masked_cmd = gen_mount_cmd($cid, $password, TRUE);
+      echo $masked_cmd . PHP_EOL;
+    }
+    echo $run;
+  }
+  exit(0);
 }
 
 /**
@@ -759,12 +777,15 @@ function cmd_mount($args) {
  *  Description of return.
  */
 function cmd_unmount($args) {
-  // @todo check that something is mounted
+
+  $silent = (isset($args['silent'])) ? true : false;
+  $verbose = (isset($args['verbose'])) ? true : false;
+
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
   else {
-    $cid = choose_connection(TRUE);
+    $cid = choose_connection(TRUE, FALSE, $silent);
   }
 
   $cmd = gen_unmount_cmd($cid);
@@ -774,8 +795,14 @@ function cmd_unmount($args) {
     $success_message .= $connection_settings['user'] . '@';
   }
   $success_message .= $connection_settings['server'] . ' ' . green('unmounted') . PHP_EOL;
-  echo run_cmd($cmd, $success_message);
-  return;
+  $run = run_cmd($cmd, $success_message);
+  if (!$silent) {
+    if ($verbose) {
+      echo $cmd . PHP_EOL;
+    }
+    echo $run;
+  }
+  exit(0);
 }
 
 /**
@@ -789,42 +816,79 @@ function cmd_unmount($args) {
  */
 function cmd_add($args) {
   global $preferences;
-  $connection_settings = [];
-  $connection_settings['server'] = read_input('Server (required): ', NULL, TRUE);
-  $connection_settings['port'] = read_input('Port (default "22"): ');
-  $connection_settings['user'] = read_input('Username: ');
-  $connection_settings['password'] = read_input('Password (Input hidden. If password not provided, it will be asked every time on connect. Leave blank for key auth): ', NULL, FALSE, TRUE);
-  $connection_settings['key'] = read_input('Path to key file (Usually "~/.ssh/id_rsa". Leave blank for password auth): ');
+  $silent = (isset($args['silent'])) ? true : false;
+  $verbose = (isset($args['verbose'])) ? true : false;
 
-  $default_mount = '~/mnt/' . $connection_settings['server'];
-  $connection_settings['mount'] = read_input('Mount directory (Required for mounting. [Enter] - "' . $default_mount . '"): ', $default_mount);
+  $connection_settings = [];
+  $prompt_server = ($verbose) ? 'Server (required): ' : 'Server: ';
+  $connection_settings['server'] = read_input($prompt_server, NULL, TRUE);
+
+  $prompt_port = ($verbose) ? 'Port (default "22"): ' : 'Port: ';
+  $connection_settings['port'] = read_input($prompt_port);
+
+  $connection_settings['user'] = read_input('Username: ');
+
+  $prompt_password = ($verbose) ? 'Password (Input hidden. If password not provided, it will be asked every time on connect. Leave blank for key auth): ' : 'Password: ';
+  $connection_settings['password'] = read_input($prompt_password, NULL, FALSE, TRUE);
+
+  $prompt_key = ($verbose) ? 'Path to key file (Usually "~/.ssh/id_rsa". Leave blank for password auth): ' : 'Path to key file: ';
+  $connection_settings['key'] = read_input($prompt_key);
+
+  // try to suggest default connection tile
+  if (ip2long($connection_settings['server']) !== FALSE) {
+    $default_title = str_replace('.', '-', $connection_settings['server']);
+  }
+  else {
+    // 'server' is domain name
+    $domain = explode('.', $connection_settings['server']);
+    if (count($domain) > 1) {
+      $default_title =  $domain[count($domain) - 2];
+    }
+    else {
+      $default_title = $connection_settings['server'];
+    }
+  }
+  $default_mount = '~/mnt/' . $default_title;
+  $prompt_mount = ($verbose) ? 'Mount directory (Required for mounting. [Enter] - "' . $default_mount . '"): ' : 'Mount directory: ';
+  $connection_settings['mount'] = read_input($prompt_mount, $default_mount);
 
   $connection_settings['remote'] = read_input('Remote directory: ');
  
-  $options = readline('Mount options (separated by comma): ');
+  $prompt_options = ($verbose) ? 'Mount options (separated by comma): ' : 'Mount options : ';
+  $options = read_input($prompt_options, '');
   $options = explode (',', $options);
   $options = array_map('trim', $options);
   $connection_settings['options'] = array_filter($options);
 
-  $connection_settings['title'] = read_input('Connection name ([Enter] - "' . $connection_settings['server'] . '"): ', $connection_settings['server']);
+  $prompt_title = ($verbose) ? 'Connection name ([Enter] - "' . $default_title . '"): ' : 'Connection name: ';
+  $connection_settings['title'] = read_input($prompt_title, $default_title);
   $cid = $connection_settings['title'];
 
-  echo PHP_EOL;
-  show_connection_settings($connection_settings);
-  echo PHP_EOL;
+  if ($verbose) {
+    echo PHP_EOL;
+    show_connection_settings($connection_settings);
+    echo PHP_EOL;
+  }
+
   // @todo while loop
   $save_config = readline('Seve config (y, [Enter] - to user directory / c - to current directory / n - cancel): ');
   if (!$save_config || $save_config == 'y' || $save_config == 'Y' || $save_config == 'Yes' || $save_config == 'yes' || $save_config == 'YES') {
     $preferences['global'] = TRUE;
-    return set_connection_settings($cid, $connection_settings);
+    set_connection_settings($cid, $connection_settings);
   }
   elseif ($save_config == 'c' || $save_config == 'C') {
     $preferences['global'] = FALSE;
-    return set_connection_settings($cid, $connection_settings, TRUE);
+    set_connection_settings($cid, $connection_settings, TRUE);
   }
   else {
-    return;
+    // canceling
+    exit(0);
   }
+  if (!$silent) {
+    // here can be only successed savings
+    echo 'Connection saved.' . PHP_EOL;
+  }
+  exit(0);
 }
 
 /**
@@ -837,14 +901,21 @@ function cmd_add($args) {
  *  Description of return.
  */
 function cmd_remove($args) {
+
+  $silent = (isset($args['silent'])) ? true : false;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
   else {
-    $cid = choose_connection();
+    $cid = choose_connection(FALSE, FALSE, $silent);
   }
 
-  return remove_connection_settings($cid);
+  remove_connection_settings($cid);
+  if (!$silent) {
+    // here can be only successed removing
+    echo 'Connection removed.' . PHP_EOL;
+  }
+  exit(0);
 }
 
 /**
@@ -857,16 +928,18 @@ function cmd_remove($args) {
  *  Description of return.
  */
 function cmd_list($args) {
+
+  $silent = (isset($args['silent'])) ? true : false;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
   else {
-    $cid = choose_connection();
+    $cid = choose_connection(FALSE, FALSE, $silent);
   }
 
   $connection_settings = get_connection_settings($cid);
   show_connection_settings($connection_settings);
-  return;
+  exit(0);
 }
 
 /**
@@ -879,25 +952,27 @@ function cmd_list($args) {
  *  Description of return.
  */
 function cmd_cd($args) {
-  global $home;
+
+  global $preferences;
+  $silent = (isset($args['silent'])) ? true : false;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
   else {
-    $cid = choose_connection();
+    $cid = choose_connection(FALSE, FALSE, $silent);
   }
 
   $connection_settings = get_connection_settings($cid);
   if (isset($connection_settings['mount'])) {
     if (substr($connection_settings['mount'], 0, 1) == '~') {
-      $path = $home . substr($connection_settings['mount'], 1);
+      $path = $preferences['home_path'] . substr($connection_settings['mount'], 1);
     }
     else {
       $path = $connection_settings['mount'];
     }
     $cd_cmd = 'cd ' . $path;
     run_terminal_cmd($cd_cmd);
-    return;
+    exit(0);
   }
   else {
     echo 'No mountpoint for ' . $cid .  ' set' . PHP_EOL;
@@ -915,11 +990,13 @@ function cmd_cd($args) {
  *  Description of return.
  */
 function cmd_ssh($args) {
+
+  $silent = (isset($args['silent'])) ? true : false;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
   else {
-    $cid = choose_connection();
+    $cid = choose_connection(FALSE, FALSE, $silent);
   }
 
   $connection_settings = get_connection_settings($cid);
@@ -930,7 +1007,8 @@ function cmd_ssh($args) {
   }
   $ssh_cmd .= $connection_settings['server'];
   run_terminal_cmd($ssh_cmd);
-  return;
+
+  exit(0);
 }
 
 /**
@@ -943,8 +1021,11 @@ function cmd_ssh($args) {
  *  Description of return.
  */
 function cmd_status($args) {
-  choose_connection(FALSE, TRUE);
-  return;
+
+  $silent = (isset($args['silent'])) ? true : false;
+  choose_connection(FALSE, TRUE, $silent);
+
+  exit(0);
 }
 
 /**
@@ -960,7 +1041,7 @@ function cmd_config($args) {
   $config_file = get_config_file();
   $config_cmd = '$EDITOR ' . $config_file;
   shell_exec($config_cmd);
-  return;
+  exit(0);
 }
 
 /**
@@ -981,7 +1062,7 @@ function cmd_help($args) {
   }
   // @todo
   echo '<Show help> cmd: ' . $cmd . PHP_EOL;
-  return;
+  exit(0);
 }
 
 /**
@@ -998,7 +1079,7 @@ function cmd_version($args) {
   $project_info = file_get_contents($preferences['project_info_file']);
   $project_info = json_decode($project_info, true);
   echo $project_info['version'] . PHP_EOL;
-  return;
+  exit(0);
 }
 
 /**
@@ -1022,7 +1103,7 @@ function cmd_info($args) {
   foreach ($info as $key => $line) {
     echo $line . PHP_EOL;
   }
-  return;
+  exit(0);
 }
 
 // handle input
@@ -1056,6 +1137,7 @@ function is_global($argv) {
  *  Description of return.
  */
 function resolve_args($argv, $argc) {
+  global $preferences;
   global $commands;
   global $params;
   $args = [];
@@ -1112,7 +1194,7 @@ function resolve_args($argv, $argc) {
             if (!$arg_found) {
               // arg not mach any validations
               echo 'Unknown command or argument ' . $arg_value . PHP_EOL;
-              return;
+              exit(1);
             }
 
           }
@@ -1161,7 +1243,7 @@ function resolve_args($argv, $argc) {
             if (!$arg_found) {
               // arg not mach any options
               echo 'Unknown option ' . $arg_value . PHP_EOL;
-              return;
+              exit(1);
             }
             
           }
@@ -1196,7 +1278,7 @@ function resolve_args($argv, $argc) {
   // check for double command
   if (isset($args['cmd']) && $cmd_cmd == $commands[$args['cmd']]['cmd']) {
     echo 'Unexpected argument for ' . $args['cmd'] . PHP_EOL;
-    return;
+    exit(1);
   }
 
   // no matter what haapened before, action should be always only this

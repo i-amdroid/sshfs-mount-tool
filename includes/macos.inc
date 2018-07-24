@@ -9,7 +9,7 @@ $preferences['default_options'] = array(
   'defer_permissions',
 );
 
-function gen_mount_cmd($cid, $password = FALSE) {
+function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
   global $preferences;
   $connection_settings = get_connection_settings($cid);
   // use provided password
@@ -26,7 +26,12 @@ function gen_mount_cmd($cid, $password = FALSE) {
     $options = array_merge($options, $connection_settings['options']);
   }
   if ($connection_settings['password']) {
-    $cmd[] = 'echo ' . $connection_settings['password'] . ' |';
+    if ($masked) {
+      $cmd[] = 'echo [password] |';
+    }
+    else {
+      $cmd[] = 'echo ' . $connection_settings['password'] . ' |';
+    }
     $options[] = 'password_stdin';
   }
   if ($connection_settings['key']) {
@@ -38,7 +43,16 @@ function gen_mount_cmd($cid, $password = FALSE) {
   } else {
     $cmd[] = $connection_settings['server'] . ':' . $connection_settings['remote'];
   }
-  $cmd[] = $connection_settings['mount'];
+
+  // mountpoint requred for mounting
+  if (isset($connection_settings['mount'])) {
+    $cmd[] = $connection_settings['mount'];
+  }
+  else {
+    echo 'No mountpoint for ' . $cid .  ' set' . PHP_EOL;
+    exit(1);
+  }
+
   $cmd[] = '-o ' . implode(',', $options);
   if ($connection_settings['port']) {
     $cmd[] = '-p ' . $connection_settings['port'];
