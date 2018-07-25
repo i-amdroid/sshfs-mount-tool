@@ -10,8 +10,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Symfony\Component\Yaml\Yaml;
 use LucidFrame\Console\ConsoleTable;
 
-// Variables
-
 $preferences['home_path'] = $_SERVER['HOME'];
 $preferences['current_path'] = exec('pwd');
 
@@ -24,10 +22,8 @@ require_once __DIR__ . '/../includes/' . $preferences['os_functions_inc'];
 
 $preferences['global'] = FALSE;
 
-// Functions
-
 /**
- * Determines OS and return corresponding inc file.
+ * Determine OS and return corresponding inc file.
  *
  * @return
  *  Filename of inc file.
@@ -49,17 +45,14 @@ function init() {
 }
 
 /**
- * Description of function.
- *
- * @param $var1
- *  Description of $var1.
+ * Determine and return config file.
  *
  * @return
- *  Description of return.
+ *  Path to config file.
  */
 function get_config_file() {
   global $preferences;
-  // set global option
+  // global option is set
   if ($preferences['global']) {
     return $preferences['user_config_file'];
   }
@@ -71,13 +64,16 @@ function get_config_file() {
 }
 
 /**
- * Description of function.
+ * Parse config file and return config array
  *
- * @param $var1
- *  Description of $var1.
+ * @param $config_file
+ *  Optional. Path to config file (in YAML format).
+ *  If provided, will be used provided file.
+ *  Else will be used default config file.
  *
  * @return
- *  Description of return.
+ *  Array of config values.
+ *  If config file empty or not exists, empty array will be returned.
  */
 function get_config($config_file = FALSE) {
   if (!$config_file) {
@@ -92,13 +88,16 @@ function get_config($config_file = FALSE) {
 }
 
 /**
- * Description of function.
+ * Save configuration array to config file.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $config
+ *  Array with configuration.
+ *
+ * @param $config_file
+ *  Path to config file (in YAML format).
  *
  * @return
- *  Description of return.
+ *  TRUE if config saved sucessfully.
  */
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
@@ -112,13 +111,10 @@ function set_config($config, $config_file) {
 }
 
 /**
- * Description of function.
- *
- * @param $var1
- *  Description of $var1.
+ * Return all connections from configuration.
  *
  * @return
- *  Description of return.
+ *  Array of connections or empty array.
  */
 function get_connections() {
   $config = get_config();
@@ -131,13 +127,14 @@ function get_connections() {
 }
 
 /**
- * Description of function.
+ * Return settings of a connection from configuration.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $cid
+ *  Connection name (ID).
+ *  Should be provided valid ID.
  *
  * @return
- *  Description of return.
+ *  Array of connection settings.
  */
 function get_connection_settings($cid) {
   $config = get_config();
@@ -145,13 +142,20 @@ function get_connection_settings($cid) {
 }
 
 /**
- * Description of function.
+ * Add connection settings to config
+ * and initiate saving it to config file.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $cid
+ *  Connection name (ID).
  *
+ * @param $connection_settings
+ *  Array of a connection settings.
+ *
+ * @param $use_current_dir
+ *  Optional. Flag for use current directory for saving config file.
+ * 
  * @return
- *  Description of return.
+ *  Result of saving function (TRUE if config saved sucessfully).
  */
 function set_connection_settings($cid, $connection_settings, $use_current_dir = FALSE) {
   global $preferences;
@@ -185,13 +189,14 @@ function set_connection_settings($cid, $connection_settings, $use_current_dir = 
 }
 
 /**
- * Description of function.
+ * Remove connection settings from config
+ * and initiate saving updated config to config file.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $cid
+ *  Connection name (ID).
  *
  * @return
- *  Description of return.
+ *  Result of saving function (TRUE if config saved sucessfully).
  */
 function remove_connection_settings($cid) {
   $config_file = get_config_file();
@@ -205,13 +210,13 @@ function remove_connection_settings($cid) {
 }
 
 /**
- * Description of function.
+ * Return connection name by mount point.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $mount_point
+ *  Path to mount point in relative or absolute format.
  *
  * @return
- *  Description of return.
+ *  Connection name or FALSE if connetion was not resolved.
  */
 function get_cid($mount_point) {
   global $preferences;
@@ -231,13 +236,13 @@ function get_cid($mount_point) {
 }
 
 /**
- * Description of function.
+ * Check that user input match connection name in config.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $input
+ *  Some string.
  *
  * @return
- *  Description of return.
+ *  Connection name or FALSE if connetion was not resolved.
  */
 function match_cid($input) {
   $connections = get_connections();
@@ -250,13 +255,13 @@ function match_cid($input) {
 }
 
 /**
- * Description of function.
+ * Check that user input match command name.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $input
+ *  Some string.
  *
  * @return
- *  Description of return.
+ *  Command name or FALSE if command was not resolved.
  */
 function match_cmd($input) {
   global $commands;
@@ -269,13 +274,17 @@ function match_cmd($input) {
 }
 
 /**
- * Description of function.
+ * Execute a shell command.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $cmd
+ *  Shell command.
  *
+ * @param $success_message
+ *  Optional. Message for return if executing was sucessfull.
+ * 
  * @return
- *  Description of return.
+ *  $success_message if executing was sucessfull
+ *  or last line of command output if executing failed.
  */
 function run_cmd($cmd, $success_message = 'Ok') {
   $output = [];
@@ -289,14 +298,14 @@ function run_cmd($cmd, $success_message = 'Ok') {
 }
 
 /**
- * Description of function.
- * https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
+ * Promt for user input, hide it during typing and then return it.
+ * Code taken from: https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
  *
- * @param $var1
- *  Description of $var1.
+ * @param $prompt
+ *  Optional. Message for prompt.
  *
  * @return
- *  Description of return.
+ *  User input.
  */
 function readline_silent($prompt = '') {
   $command = "/usr/bin/env bash -c 'echo OK'";
@@ -313,26 +322,34 @@ function readline_silent($prompt = '') {
 }
 
 /**
- * Description of function.
+ * Add special symbols to make text color green in terminal.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $text
+ *  Some text.
  *
  * @return
- *  Description of return.
+ *  Text wrapped by special symbols.
  */
 function green($text) {
   return "\033[32m" . $text . "\033[39m";
 }
 
 /**
- * Description of function.
+ * Choose connection from config and return it.
+ * If only one connection exist, it will be returned automatically.
+ * If multiple connections exists, user will prompted to choose one. 
  *
- * @param $var1
- *  Description of $var1.
+ * @param $mounted_only
+ *  Optional. Flag for show only mounted connetions in list.
  *
+ * @param $show_only
+ *  Optional. Flag for only showing connetions list without prompting for choose.
+ *
+ * @param $silent
+ *  Optional. Flag for silent mode.
+ *  
  * @return
- *  Description of return.
+ *  Connection name.
  */
 function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = FALSE) {
   $connections = get_connections();
@@ -411,17 +428,17 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
     return $cid;
   }
 
-  exit (0);
+  return;
 }
 
 /**
- * Description of function.
+ * Show connection settings in table format.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $connection_settings
+ *  Array of settings.
  *
  * @return
- *  Description of return.
+ *  Nothing.
  */
 function show_connection_settings($connection_settings) {
   $table = new ConsoleTable();
@@ -452,17 +469,22 @@ function show_connection_settings($connection_settings) {
   $table->setPadding(2);
   $table->hideBorder();
   $table->display();
+
   return;
 }
 
 /**
- * Description of function.
+ * Check that user input match connection name or number
+ * in provided connection names list.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $input
+ *  Some string.
  *
+ * @param $cids
+ *  Array of connection names.
+ * 
  * @return
- *  Description of return.
+ *  Connection name or exit script if connction name was not resolved.
  */
 function validate_input($input, $cids) {
   if (is_numeric($input)) {
@@ -488,13 +510,22 @@ function validate_input($input, $cids) {
 }
 
 /**
- * Description of function.
+ * Promt for user input with additional conditions.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $prompt
+ *  Message for prompt.
  *
+ * @param $default_value
+ *  Optional. Value for empty user input.
+ *
+ * @param $requred
+ *  Optional. Flag for repeat prompt untill input will be provided.
+ *
+ * @param $hidden
+ *  Optional. Flag for use hidden input.
+ *   
  * @return
- *  Description of return.
+ *  User input or $default_value if input was empty.
  */
 function read_input($prompt, $default_value = NULL, $requred = FALSE, $hidden = FALSE) {
 
@@ -523,7 +554,16 @@ function read_input($prompt, $default_value = NULL, $requred = FALSE, $hidden = 
   return $input;
 }
 
-// params definition
+/**
+ * Definition of parameters for command functions.
+ *
+ * arguments - values for command functions.
+ * options - flags for altering command functions behaviour.
+ * flags - flags with value for providing additional parameters to command functions.
+ *
+ * This array used for resolving command line arguments
+ * and generating help.
+ */
 $params = [];
 
 $params['arguments']['cid'] = [
@@ -571,7 +611,18 @@ $params['flags']['password'] = [
   'key' => 'p',
 ];
 
-// commands definition
+/**
+ * Definition of commands.
+ *
+ * name - Command name.
+ * aliases - list of aliases.
+ * args - list of required arguments
+ * optional_args - list of optional arguments.
+ * cms - command function.
+ *
+ * This array used for resolving commands 
+ * and generating help.
+ */
 $commands = [];
 
 $commands['default'] = [
@@ -720,16 +771,14 @@ $commands['ssh'] = [
   'cmd' => 'cmd_ssh', 
 ];
 
-// command functions
-
 /**
- * Description of function.
+ * Mount connection. Default function.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_mount($args) {
 
@@ -768,13 +817,13 @@ function cmd_mount($args) {
 }
 
 /**
- * Description of function.
+ * Unmount connection.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_unmount($args) {
 
@@ -806,13 +855,13 @@ function cmd_unmount($args) {
 }
 
 /**
- * Description of function.
+ * Add new connection.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_add($args) {
   global $preferences;
@@ -892,13 +941,13 @@ function cmd_add($args) {
 }
 
 /**
- * Description of function.
+ * Remove existing connection.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_remove($args) {
 
@@ -919,13 +968,13 @@ function cmd_remove($args) {
 }
 
 /**
- * Description of function.
+ * Show settings of a connection.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_list($args) {
 
@@ -943,13 +992,13 @@ function cmd_list($args) {
 }
 
 /**
- * Description of function.
+ * Go to connection mount dirrectory.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_cd($args) {
 
@@ -981,13 +1030,13 @@ function cmd_cd($args) {
 }
 
 /**
- * Description of function.
+ * Launch SSH session for a connection.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_ssh($args) {
 
@@ -1012,13 +1061,13 @@ function cmd_ssh($args) {
 }
 
 /**
- * Description of function.
+ * Show mount status of all connections.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_status($args) {
 
@@ -1029,13 +1078,13 @@ function cmd_status($args) {
 }
 
 /**
- * Description of function.
+ * Open config file for edit.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_config($args) {
   $config_file = get_config_file();
@@ -1045,13 +1094,13 @@ function cmd_config($args) {
 }
 
 /**
- * Description of function.
+ * Show help.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_help($args) {
   if (isset($args['cmd'])) {
@@ -1066,13 +1115,13 @@ function cmd_help($args) {
 }
 
 /**
- * Description of function.
+ * Show script version.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_version($args) {
   global $preferences;
@@ -1083,13 +1132,13 @@ function cmd_version($args) {
 }
 
 /**
- * Description of function.
+ * Show info about dependencies.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $args
+ *  array of arguments.
  *
  * @return
- *  Description of return.
+ *  Nothung.
  */
 function cmd_info($args) {
   global $preferences;
@@ -1106,16 +1155,15 @@ function cmd_info($args) {
   exit(0);
 }
 
-// handle input
-
 /**
- * Description of function.
+ * Check for global option provided.
+ * Set global preference if option provided.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $argv
+ *  Array of command line arguments.
  *
  * @return
- *  Description of return.
+ *  Nothing.
  */
 function is_global($argv) {
   global $preferences;
@@ -1128,16 +1176,21 @@ function is_global($argv) {
 }
 
 /**
- * Parse script args.
+ * Resolve comands and options from command line arguments.
+ * Provide logic for handling fifferent amount of provided arguments,
+ * different contents and order.
+ * Execute corresponding command function.
  *
- * @param $var1
- *  Description of $var1.
+ * @param $argv
+ *  Array of command line arguments.
+ *
+ * @param $argc
+ *  Amount of command line arguments.
  *
  * @return
- *  Description of return.
+ *  Result of command finction.
  */
 function resolve_args($argv, $argc) {
-  global $preferences;
   global $commands;
   global $params;
   $args = [];
@@ -1281,11 +1334,11 @@ function resolve_args($argv, $argc) {
     exit(1);
   }
 
-  // no matter what haapened before, action should be always only this
   return $cmd_cmd($args);
 }
 
-// Main function
-
+/**
+ * Main function.
+ */
 is_global($argv);
 resolve_args($argv, $argc);
