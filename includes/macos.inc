@@ -5,8 +5,9 @@ $preferences['unmount_cmd'] = 'umount';
 $preferences['mounts_list_cmd'] = 'mount';
 $preferences['default_options'] = array(
   'follow_symlinks',
-  'allow_other',
-  'defer_permissions',
+  // 'allow_other',
+  // 'defer_permissions',
+  'StrictHostKeyChecking=no',
 );
 
 function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
@@ -21,7 +22,6 @@ function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
 
   $options[] = 'volname=' . $connection_settings['title'];
   $options = array_merge($options, $preferences['default_options']);
-  // if ($connection_settings['options']) {
   if (isset($connection_settings['options'])) {
     $options = array_merge($options, $connection_settings['options']);
   }

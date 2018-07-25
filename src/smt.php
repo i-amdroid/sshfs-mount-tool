@@ -101,7 +101,17 @@ function get_config($config_file = FALSE) {
  */
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
+
+  // if config file not exist yet, check and if need, create folder for it
+  if (!file_exists($config_file)) {
+    $config_file_dir = dirname($config_file);
+    if (!is_dir($config_file_dir)) {
+      mkdir($config_file_dir, 0777, TRUE);
+    }
+  }
+  
   if (file_put_contents($config_file, $yaml)) {
+    chmod($config_file, 0777);
     return TRUE;
   }
   else {
@@ -443,30 +453,34 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
 function show_connection_settings($connection_settings) {
   $table = new ConsoleTable();
   $table->setHeaders([
-    'property',
-    'value',
+    ' property',
+    ':',
+    'value ',
   ]);
   foreach ($connection_settings as $key => $value) {
     if ($key == 'options') {
       $table->addRow([
-        $key,
-        implode(',', $value),
+        ' ' . $key,
+        ':',
+        implode(',', $value) . ' ',
       ]);
     }
     elseif ($key == 'password' && $value) {
       $table->addRow([
-        $key,
-        '[password]',
+        ' ' . $key,
+        ':',
+        '[password]' . ' ',
       ]);
     }
     else {
       $table->addRow([
-        $key,
-        $value,
+        ' ' . $key,
+        ':',
+        $value . ' ',
       ]);
     }
   }
-  $table->setPadding(2);
+  $table->setPadding(1);
   $table->hideBorder();
   $table->display();
 
@@ -781,7 +795,7 @@ $commands['ssh'] = [
  *  Nothung.
  */
 function cmd_mount($args) {
-
+  global $preferences;
   $silent = (isset($args['silent'])) ? true : false;
   $verbose = (isset($args['verbose'])) ? true : false;
 
@@ -800,19 +814,34 @@ function cmd_mount($args) {
 
   $cmd = gen_mount_cmd($cid, $password);
   $connection_settings = get_connection_settings($cid);
+
+  // check existing of mountpoint and create if needed
+  if (substr($connection_settings['mount'], 0, 1) == '~') {
+    $mount_dir = $preferences['home_path'] . substr($connection_settings['mount'], 1);
+  }
+  else {
+    $mount_dir = $connection_settings['mount'];
+  }
+  if (!is_dir($mount_dir)) {
+    mkdir($mount_dir, 0777, TRUE);
+  }
+
   $success_message = '';
   if (isset($connection_settings['user'])) {
     $success_message .= $connection_settings['user'] . '@';
   }
   $success_message .= $connection_settings['server'] . ' ' . green('mounted') . ' to ' . $connection_settings['mount'] . PHP_EOL;
-  $run = run_cmd($cmd, $success_message);
   if (!$silent) {
     if ($verbose) {
       $masked_cmd = gen_mount_cmd($cid, $password, TRUE);
       echo $masked_cmd . PHP_EOL;
     }
+  }
+  $run = run_cmd($cmd, $success_message);
+  if (!$silent) {
     echo $run;
   }
+
   exit(0);
 }
 
@@ -844,13 +873,16 @@ function cmd_unmount($args) {
     $success_message .= $connection_settings['user'] . '@';
   }
   $success_message .= $connection_settings['server'] . ' ' . green('unmounted') . PHP_EOL;
-  $run = run_cmd($cmd, $success_message);
   if (!$silent) {
     if ($verbose) {
       echo $cmd . PHP_EOL;
     }
+  }
+  $run = run_cmd($cmd, $success_message);
+  if (!$silent) {
     echo $run;
   }
+
   exit(0);
 }
 
@@ -891,9 +923,11 @@ function cmd_add($args) {
     // 'server' is domain name
     $domain = explode('.', $connection_settings['server']);
     if (count($domain) > 1) {
+      // domain without zone
       $default_title =  $domain[count($domain) - 2];
     }
     else {
+      // complex domain name, so just print full domain
       $default_title = $connection_settings['server'];
     }
   }
@@ -910,7 +944,11 @@ function cmd_add($args) {
   $connection_settings['options'] = array_filter($options);
 
   $prompt_title = ($verbose) ? 'Connection name ([Enter] - "' . $default_title . '"): ' : 'Connection name: ';
-  $connection_settings['title'] = read_input($prompt_title, $default_title);
+  
+  $title = read_input($prompt_title, $default_title);
+  // add title to the begining of the list
+  $connection_settings = array('title' => $title) + $connection_settings;
+
   $cid = $connection_settings['title'];
 
   if ($verbose) {
@@ -1147,8 +1185,11 @@ function cmd_info($args) {
   $project_info = json_decode($project_info, true);
   $info[] = 'SSHFS Mount Tool v' . $project_info['version'];
   exec('sshfs --version 2> /dev/null', $info);
+  $info[] = 'PHP v' . PHP_VERSION;
+
   // @todo check for other dependencies
   // @todo show as table "dependency version : status"
+  
   foreach ($info as $key => $line) {
     echo $line . PHP_EOL;
   }
