@@ -1194,6 +1194,7 @@ function cmd_info($args) {
   foreach ($info as $key => $line) {
     echo $line . PHP_EOL;
   }
+
   exit(0);
 }
 

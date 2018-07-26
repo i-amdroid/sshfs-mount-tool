@@ -1,6 +1,7 @@
 {
   "chmod": "0755",
-  "files": ["src/smt.php", "README.md"],
+  "files": ["src/smt.php", "composer.json", "README.md"],
+  "directories": ["includes", "vendor"],
   "main": "bin/main",
   "output": "smt.phar",
   "stub": true
