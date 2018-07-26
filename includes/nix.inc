@@ -3,6 +3,7 @@
 $preferences['mount_cmd'] = 'sshfs';
 $preferences['unmount_cmd'] = 'fusermount -u';
 $preferences['mounts_list_cmd'] = 'mount';
+$preferences['editor'] = 'editor';
 $preferences['default_options'] = array(
   'follow_symlinks',
   // 'allow_other',

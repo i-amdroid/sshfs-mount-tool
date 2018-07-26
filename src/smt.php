@@ -1125,9 +1125,10 @@ function cmd_status($args) {
  *  Nothung.
  */
 function cmd_config($args) {
+  global $preferences;
   $config_file = get_config_file();
-  $config_cmd = '$EDITOR ' . $config_file;
-  shell_exec($config_cmd);
+  $config_cmd = $preferences['editor'] . ' ' . $config_file . ' > `tty`';
+  system($config_cmd);
   exit(0);
 }
 
