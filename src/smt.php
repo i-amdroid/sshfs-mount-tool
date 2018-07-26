@@ -140,7 +140,7 @@ function get_connections() {
  * Return settings of a connection from configuration.
  *
  * @param $cid
- *  Connection name (ID).
+ *  Connection ID.
  *  Should be provided valid ID.
  *
  * @return
@@ -156,7 +156,7 @@ function get_connection_settings($cid) {
  * and initiate saving it to config file.
  *
  * @param $cid
- *  Connection name (ID).
+ *  Connection ID.
  *
  * @param $connection_settings
  *  Array of a connection settings.
@@ -203,7 +203,7 @@ function set_connection_settings($cid, $connection_settings, $use_current_dir = 
  * and initiate saving updated config to config file.
  *
  * @param $cid
- *  Connection name (ID).
+ *  Connection ID.
  *
  * @return
  *  Result of saving function (TRUE if config saved sucessfully).
@@ -220,13 +220,13 @@ function remove_connection_settings($cid) {
 }
 
 /**
- * Return connection name by mount point.
+ * Return connection ID by mount point.
  *
  * @param $mount_point
  *  Path to mount point in relative or absolute format.
  *
  * @return
- *  Connection name or FALSE if connetion was not resolved.
+ *  Connection ID or FALSE if connetion was not resolved.
  */
 function get_cid($mount_point) {
   global $preferences;
@@ -246,13 +246,13 @@ function get_cid($mount_point) {
 }
 
 /**
- * Check that user input match connection name in config.
+ * Check that user input match connection ID in config.
  *
  * @param $input
  *  Some string.
  *
  * @return
- *  Connection name or FALSE if connetion was not resolved.
+ *  Connection ID or FALSE if connetion was not resolved.
  */
 function match_cid($input) {
   $connections = get_connections();
@@ -359,7 +359,7 @@ function green($text) {
  *  Optional. Flag for silent mode.
  *  
  * @return
- *  Connection name.
+ *  Connection ID.
  */
 function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = FALSE) {
   $connections = get_connections();
@@ -405,7 +405,8 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
   $table = new ConsoleTable();
   $table->setHeaders([
     '#',
-    'connection',
+    'id',
+    'title',
     'status',
   ]);
   foreach ($connections as $cid => $connection_settings) {
@@ -413,6 +414,7 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
       $table->addRow([
         green($i),
         green($cid),
+        green($connection_settings['title']),
         green('mounted'),
       ]);
       $cids[$i] = $cid;
@@ -422,6 +424,7 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
       $table->addRow([
         $i,
         $cid,
+        $connection_settings['title'],
         'not mounted',
       ]);
       $cids[$i] = $cid;
@@ -433,7 +436,7 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
   $table->display();
 
   if (!$show_only) {
-    $input = readline('Number or name of connection: ');
+    $input = readline('Number or ID of connection: ');
     $cid = validate_input($input, $cids);
     return $cid;
   }
@@ -444,18 +447,26 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
 /**
  * Show connection settings in table format.
  *
+ * @param $cid
+ *  Connection ID.
+ *
  * @param $connection_settings
  *  Array of settings.
  *
  * @return
  *  Nothing.
  */
-function show_connection_settings($connection_settings) {
+function show_connection_settings($cid, $connection_settings) {
   $table = new ConsoleTable();
   $table->setHeaders([
     ' property',
     ':',
     'value ',
+  ]);
+  $table->addRow([
+    ' id',
+    ':',
+    $cid . ' ',
   ]);
   foreach ($connection_settings as $key => $value) {
     if ($key == 'options') {
@@ -469,7 +480,7 @@ function show_connection_settings($connection_settings) {
       $table->addRow([
         ' ' . $key,
         ':',
-        '[password]' . ' ',
+        '[password] ',
       ]);
     }
     else {
@@ -488,17 +499,17 @@ function show_connection_settings($connection_settings) {
 }
 
 /**
- * Check that user input match connection name or number
- * in provided connection names list.
+ * Check that user input match connection ID or number
+ * in provided connection IDs list.
  *
  * @param $input
  *  Some string.
  *
  * @param $cids
- *  Array of connection names.
+ *  Array of connection IDs.
  * 
  * @return
- *  Connection name or exit script if connction name was not resolved.
+ *  Connection ID or exit script if connction ID was not resolved.
  */
 function validate_input($input, $cids) {
   if (is_numeric($input)) {
@@ -516,7 +527,7 @@ function validate_input($input, $cids) {
       $cid = $input;
     }
     else {
-      echo $input . ' is not a valid connection name' . PHP_EOL;
+      echo $input . ' is not a valid connection ID' . PHP_EOL;
       exit(1);
     }
   }
@@ -581,8 +592,8 @@ function read_input($prompt, $default_value = NULL, $requred = FALSE, $hidden = 
 $params = [];
 
 $params['arguments']['cid'] = [
-  'name' => 'Connection name',
-  'argument' => 'connection',
+  'name' => 'Connection ID',
+  'argument' => 'connection id',
   'validate' => 'match_cid',
 ];
 
@@ -904,15 +915,15 @@ function cmd_add($args) {
   $prompt_server = ($verbose) ? 'Server (required): ' : 'Server: ';
   $connection_settings['server'] = read_input($prompt_server, NULL, TRUE);
 
-  $prompt_port = ($verbose) ? 'Port (default "22"): ' : 'Port: ';
+  $prompt_port = ($verbose) ? 'Port. Default "22": ' : 'Port: ';
   $connection_settings['port'] = read_input($prompt_port);
 
   $connection_settings['user'] = read_input('Username: ');
 
-  $prompt_password = ($verbose) ? 'Password (Input hidden. If password not provided, it will be asked every time on connect. Leave blank for key auth): ' : 'Password: ';
+  $prompt_password = ($verbose) ? 'Password. Input hidden. If password not provided, it will be asked every time on connect. Leave blank for key auth: ' : 'Password: ';
   $connection_settings['password'] = read_input($prompt_password, NULL, FALSE, TRUE);
 
-  $prompt_key = ($verbose) ? 'Path to key file (Usually "~/.ssh/id_rsa". Leave blank for password auth): ' : 'Path to key file: ';
+  $prompt_key = ($verbose) ? 'Path to key file. Usually "~/.ssh/id_rsa". Leave blank for password auth: ' : 'Path to key file: ';
   $connection_settings['key'] = read_input($prompt_key);
 
   // try to suggest default connection tile
@@ -932,33 +943,34 @@ function cmd_add($args) {
     }
   }
   $default_mount = '~/mnt/' . $default_title;
-  $prompt_mount = ($verbose) ? 'Mount directory (Required for mounting. [Enter] - "' . $default_mount . '"): ' : 'Mount directory: ';
+  $prompt_mount = ($verbose) ? 'Mount directory. Required for mounting. [Enter] - "' . $default_mount . '": ' : 'Mount directory: ';
   $connection_settings['mount'] = read_input($prompt_mount, $default_mount);
 
   $connection_settings['remote'] = read_input('Remote directory: ');
  
-  $prompt_options = ($verbose) ? 'Mount options (separated by comma): ' : 'Mount options : ';
+  $prompt_options = ($verbose) ? 'Mount options, separated by comma: ' : 'Mount options : ';
   $options = read_input($prompt_options, '');
   $options = explode (',', $options);
   $options = array_map('trim', $options);
   $connection_settings['options'] = array_filter($options);
 
-  $prompt_title = ($verbose) ? 'Connection name ([Enter] - "' . $default_title . '"): ' : 'Connection name: ';
+  $prompt_title = ($verbose) ? 'Connection title [Enter] - "' . $default_title . '": ' : 'Connection title: ';
   
   $title = read_input($prompt_title, $default_title);
   // add title to the begining of the list
   $connection_settings = array('title' => $title) + $connection_settings;
 
-  $cid = $connection_settings['title'];
+  $prompt_cid = ($verbose) ? 'Connection ID. Used as shortcut. [Enter] - "' . $default_title . '": ' : 'Connection ID: ';
+  $cid = read_input($prompt_cid, $default_title);
 
   if ($verbose) {
     echo PHP_EOL;
-    show_connection_settings($connection_settings);
+    show_connection_settings($cid, $connection_settings);
     echo PHP_EOL;
   }
 
   // @todo while loop
-  $save_config = readline('Seve config (y, [Enter] - to user directory / c - to current directory / n - cancel): ');
+  $save_config = readline('Seve config? [y, Enter] - yes, to user directory / [c] - to current directory / [n] - cancel: ');
   if (!$save_config || $save_config == 'y' || $save_config == 'Y' || $save_config == 'Yes' || $save_config == 'yes' || $save_config == 'YES') {
     $preferences['global'] = TRUE;
     set_connection_settings($cid, $connection_settings);
@@ -1025,7 +1037,7 @@ function cmd_list($args) {
   }
 
   $connection_settings = get_connection_settings($cid);
-  show_connection_settings($connection_settings);
+  show_connection_settings($cid, $connection_settings);
   exit(0);
 }
 

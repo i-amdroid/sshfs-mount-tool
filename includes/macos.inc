@@ -11,6 +11,22 @@ $preferences['default_options'] = array(
   'StrictHostKeyChecking=no',
 );
 
+/**
+ * Return shell command for mount.
+ *
+ * @param $cid
+ *  Connection ID.
+ *
+ * @param $password
+ *  Password. Optional.
+ *
+ * @param $masked
+ *  Optional. Flag for generate command with masked password,
+ *  for showing in console.
+ *  
+ * @return
+ *  Shell command.
+ */
 function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
   global $preferences;
   $connection_settings = get_connection_settings($cid);
@@ -21,7 +37,7 @@ function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
   $options = [];
   $cmd = [];
 
-  $options[] = 'volname=' . $connection_settings['title'];
+  $options[] = 'volname=' . $cid;
   $options = array_merge($options, $preferences['default_options']);
   if (isset($connection_settings['options'])) {
     $options = array_merge($options, $connection_settings['options']);
@@ -61,12 +77,27 @@ function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
   return implode(' ', $cmd);
 }
 
+/**
+ * Return shell command for unmount.
+ *
+ * @param $cid
+ *  Connection ID.
+ *
+ * @return
+ *  Shell command.
+ */
 function gen_unmount_cmd($cid) {
   global $preferences;
   $connection_settings = get_connection_settings($cid);
   return $preferences['unmount_cmd'] . ' ' . $connection_settings['mount'];
 }
 
+/**
+ * Return currently mounted connections.
+ *
+ * @return
+ *  List of connections.
+ */
 function get_mounts() {
   global $preferences;
   $mount_output = [];
@@ -88,6 +119,18 @@ function get_mounts() {
   return $cids;
 }
 
+/**
+ * Execute command in separate terminal.
+ *
+ * @param $cmd
+ *  Command for execute.
+ *
+ * @param $new_tab
+ *  Optional. Flag for using tab instead new window. 
+ *  
+ * @return
+ *  Result of command execution.
+ */
 function run_terminal_cmd($cmd, $new_tab = TRUE) {
   if ($new_tab) {
     return shell_exec('osascript -e \'tell application "Terminal" to activate\' -e \'tell application "System Events" to tell process "Terminal" to keystroke "t" using command down\' -e \'tell application "Terminal" to do script "' . $cmd . '" in selected tab of the front window\'');
