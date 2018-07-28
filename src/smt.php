@@ -610,7 +610,7 @@ $params['options']['global'] = [
 ];
 
 $params['options']['verbose'] = [
-  'name' => 'Verbose node',
+  'name' => 'Verbose mode',
   'key' => 'v',
 ];
 
@@ -650,9 +650,11 @@ $params['flags']['password'] = [
  */
 $commands = [];
 
-$commands['default'] = [
+$commands['mount'] = [
   'name' => 'Mount connection',
-  'aliases' => [],
+  'aliases' => [
+    'mount',
+  ],
   'optional_args' => [
     'cid' => $params['arguments']['cid'],
     'password' => $params['flags']['password'],
@@ -745,8 +747,8 @@ $commands['help'] = [
   'name' => 'Show help',
   'aliases' => [
     'help',
-    '--help',
     '-h',
+    '--help',
   ],
   'optional_args' => [
     'cmd' => $params['arguments']['cmd'],
@@ -758,8 +760,8 @@ $commands['version'] = [
   'name' => 'Show version',
   'aliases' => [
     'version',
-    '--version',
     '-V',
+    '--version',
   ],
   'cmd' => 'cmd_version',
 ];
@@ -768,8 +770,8 @@ $commands['info'] = [
   'name' => 'Show information about dependencies',
   'aliases' => [
     'info',
-    '--info',
     '-i',
+    '--info',
   ],
   'cmd' => 'cmd_info',
 ];
@@ -1154,14 +1156,52 @@ function cmd_config($args) {
  *  Nothung.
  */
 function cmd_help($args) {
+  global $commands;
+  global $params;
   if (isset($args['cmd'])) {
     $cmd = $args['cmd'];
+
+    // @todo help for command
+    echo '<Show help> cmd: ' . $cmd . PHP_EOL;
+
   }
   else {
-    $cmd = 'default';
+    // help for all commands
+
+    echo 'SSHFS Mount Tool'. PHP_EOL;
+    echo PHP_EOL;
+    echo 'Usage: ' . PHP_EOL;
+    echo '  smt <command> [options] [arguments] ' . PHP_EOL;
+    echo PHP_EOL;
+    echo 'Commands: ' . PHP_EOL;
+    $cmd_table = new ConsoleTable();
+    foreach ($commands as $cmd => $cmd_properties) {
+      $aliases = implode(', ', $cmd_properties['aliases']);
+      $cmd_table->addRow([
+        $aliases,
+        $cmd_properties['name'],
+      ]);
+    }
+    $cmd_table->setPadding(2);
+    $cmd_table->hideBorder();
+    $cmd_table->display();
+
+    echo PHP_EOL;
+    echo 'Options: ' . PHP_EOL;
+    $opt_table = new ConsoleTable();
+    foreach ($params['options'] as $opt => $opt_properties) {
+      $aliases = '-' . $opt_properties['key'] . ', --' . $opt;
+      $opt_table->addRow([
+        $aliases,
+        $opt_properties['name'],
+      ]);
+    }
+    $opt_table->setPadding(2);
+    $opt_table->hideBorder();
+    $opt_table->display();
+
   }
-  // @todo
-  echo '<Show help> cmd: ' . $cmd . PHP_EOL;
+
   exit(0);
 }
 
@@ -1252,7 +1292,7 @@ function resolve_args($argv, $argc) {
 
   if ($argc == 1) {
     // no args
-    $cmd_cmd = $commands['default']['cmd'];
+    $cmd_cmd = $commands['mount']['cmd'];
   }
   else {
     // has args
@@ -1268,7 +1308,7 @@ function resolve_args($argv, $argc) {
       array_shift($argv);
     }
     else {
-      $cmd_cmd = $commands['default']['cmd'];
+      $cmd_cmd = $commands['mount']['cmd'];
     }
 
     if (!empty($argv)) {
@@ -1365,7 +1405,7 @@ function resolve_args($argv, $argc) {
   }
 
   // fallback for wrong command order
-  if ($cmd_cmd == $commands['default']['cmd'] && isset($args['cmd'])) {
+  if ($cmd_cmd == $commands['mount']['cmd'] && isset($args['cmd'])) {
     $cmd = $args['cmd'];
     $cmd_cmd = $commands[$cmd]['cmd'];
     unset($args['cmd']);
