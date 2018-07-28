@@ -180,9 +180,16 @@ function set_connection_settings($cid, $connection_settings, $use_current_dir = 
   if (isset($config['connections'])) {
     foreach ($config['connections'] as $key => $value) {
       if ($key == $cid) {
-        // @todo ask for rewrite
-        $config['connections'][$key] = $connection_settings;
-        $connection_exist = TRUE;
+        // ask for rewrite
+        $overwrite = readline("Connection '" . $cid . "' already exists, overwrite it? [y/N]: ");
+        if ($overwrite == 'y' || $overwrite == 'Y' || $overwrite == 'Yes' || $overwrite == 'yes' || $overwrite == 'YES') {
+          $config['connections'][$key] = $connection_settings;
+          $connection_exist = TRUE;
+        }
+        else {
+          // canceling
+          exit(0);
+        }
       }
     }
   }
@@ -592,12 +599,14 @@ function read_input($prompt, $default_value = NULL, $requred = FALSE, $hidden = 
 $params = [];
 
 $params['arguments']['cid'] = [
+  'type' => 'argument',
   'name' => 'Connection ID',
   'argument' => 'connection id',
   'validate' => 'match_cid',
 ];
 
 $params['arguments']['cmd'] = [
+  'type' => 'argument',
   'name' => 'Command',
   'argument' => 'command',
   'validate' => 'match_cmd',
@@ -605,32 +614,40 @@ $params['arguments']['cmd'] = [
 
 // handled separately, listed here for generating help and pass validation as option
 $params['options']['global'] = [
-  'name' => 'Use config in user directory',
+  'type' => 'option',
+  'name' => 'Use config from user directory',
   'key' => 'g',
 ];
 
 $params['options']['verbose'] = [
+  'type' => 'option',
   'name' => 'Verbose mode',
   'key' => 'v',
 ];
 
 $params['options']['silent'] = [
+  'type' => 'option',
   'name' => 'Silent mode',
   'key' => 's',
 ];
 
+/*
 $params['options']['yes'] = [
+  'type' => 'option',
   'name' => 'Automatic confirmation',
   'key' => 'y',
 ];
+*/
 
 // listed here for generating help and pass validation as option
 $params['options']['help'] = [
+  'type' => 'option',
   'name' => 'Show help',
   'key' => 'h',
 ];
 
 $params['flags']['password'] = [
+  'type' => 'flag',
   'name' => 'Provide password',
   'argument' => 'password',
   'key' => 'p',
@@ -656,13 +673,13 @@ $commands['mount'] = [
     'mount',
   ],
   'optional_args' => [
-    'cid' => $params['arguments']['cid'],
-    'password' => $params['flags']['password'],
     'global' => $params['options']['global'],
     'verbose' => $params['options']['verbose'],
     'silent' => $params['options']['silent'],
+    'cid' => $params['arguments']['cid'],
+    'password' => $params['flags']['password'],
   ],
-  'cmd' => 'cmd_mount', 
+  'cmd' => 'cmd_mount',
 ];
 
 $commands['unmount'] = [
@@ -672,10 +689,10 @@ $commands['unmount'] = [
     'um',
   ],
   'optional_args' => [
-    'cid' => $params['arguments']['cid'],
     'global' => $params['options']['global'],
     'verbose' => $params['options']['verbose'],
     'silent' => $params['options']['silent'],
+    'cid' => $params['arguments']['cid'],
   ],
   'cmd' => 'cmd_unmount', 
 ];
@@ -698,10 +715,10 @@ $commands['remove'] = [
     'rm',
   ],
   'optional_args' => [
-    'cid' => $params['arguments']['cid'],
     'global' => $params['options']['global'],
     'silent' => $params['options']['silent'],
-    'yes' => $params['options']['yes'],
+    // 'yes' => $params['options']['yes'],
+    'cid' => $params['arguments']['cid'],
   ],
   'cmd' => 'cmd_remove', 
 ];
@@ -713,8 +730,8 @@ $commands['list'] = [
     'ls',
   ],
   'optional_args' => [
-    'cid' => $params['arguments']['cid'],
     'global' => $params['options']['global'],
+    'cid' => $params['arguments']['cid'],
   ],
   'cmd' => 'cmd_list', 
 ];
@@ -1161,25 +1178,125 @@ function cmd_help($args) {
   if (isset($args['cmd'])) {
     $cmd = $args['cmd'];
 
-    // @todo help for command
-    echo '<Show help> cmd: ' . $cmd . PHP_EOL;
+    // help for the command
+    foreach ($commands as $command => $command_properties) {
+      if ($cmd == $command) {
+        $usage = [];
+        $has_options = FALSE;
+        $has_argument = FALSE;
+        $has_flags = FALSE;
+        if (isset($command_properties['optional_args'])) {
+          foreach ($command_properties['optional_args'] as $arg => $arg_properties) {
+            switch ($arg_properties['type']) {
+              case 'option':
+                $has_options = TRUE;
+                break;
+              case 'argument':
+                $has_argument = TRUE;
+                break;
+              case 'flag':
+                $has_flags = TRUE;
+                break;
+            }
+          }
+        }
+        echo $command_properties['name'] . PHP_EOL;
+        echo PHP_EOL;
+        echo 'Usage: ' . PHP_EOL;
+        if ($has_options) {
+          $usage[] = '[options]';
+        }
+        if ($has_argument) {
+          $usage[] = '[argument]';
+        }
+        if ($has_flags) {
+          $usage[] = '[flags]';
+        }
+
+        foreach ($command_properties['aliases'] as $alias) {
+          echo '  smt ' . $alias . ' ' . implode(' ', $usage) . PHP_EOL;
+          if ($alias == 'mount') {
+            echo '  smt ' . implode(' ', $usage) . PHP_EOL;
+          }
+        }
+
+        if ($has_options) {
+          echo PHP_EOL;
+          echo 'Options: ' . PHP_EOL;
+          $opt_table = new ConsoleTable();
+          foreach ($command_properties['optional_args'] as $opt => $opt_properties) {
+            if ($opt_properties['type'] == 'option') {
+              $aliases = '-' . $opt_properties['key'] . ', --' . $opt;
+              $opt_table->addRow([
+                $aliases,
+                $opt_properties['name'],
+              ]);
+            }
+          }
+          $opt_table->setPadding(2);
+          $opt_table->hideBorder();
+          $opt_table->display();
+        }
+
+        if ($has_argument) {
+          echo PHP_EOL;
+          echo 'Argument: ' . PHP_EOL;
+          $arg_table = new ConsoleTable();
+          foreach ($command_properties['optional_args'] as $arg => $arg_properties) {
+            if ($arg_properties['type'] == 'argument') {
+              $aliases = '<' . $arg_properties['argument'] . '>';
+              $arg_table->addRow([
+                $aliases,
+                $arg_properties['name'],
+              ]);
+            }
+          }
+          $arg_table->setPadding(2);
+          $arg_table->hideBorder();
+          $arg_table->display();
+        }
+
+        if ($has_flags) {
+          echo PHP_EOL;
+          echo 'Flags: ' . PHP_EOL;
+          $flg_table = new ConsoleTable();
+          foreach ($command_properties['optional_args'] as $flg => $flg_properties) {
+            if ($flg_properties['type'] == 'flag') {
+              $aliases = '-' . $flg_properties['key'] . ', --' . $flg . ' <' . $flg_properties['argument'] . '>';
+              $flg_table->addRow([
+                $aliases,
+                $flg_properties['name'],
+              ]);
+            }
+          }
+          $flg_table->setPadding(2);
+          $flg_table->hideBorder();
+          $flg_table->display();
+        }
+
+      }
+    }
 
   }
   else {
-    // help for all commands
 
+    // help for all commands
     echo 'SSHFS Mount Tool'. PHP_EOL;
+    echo 'Tool for manage and mount SSH connections as file system volumes.' . PHP_EOL;
     echo PHP_EOL;
     echo 'Usage: ' . PHP_EOL;
-    echo '  smt <command> [options] [arguments] ' . PHP_EOL;
+    echo '  smt <command> [options] [argument] [flags]' . PHP_EOL;
     echo PHP_EOL;
     echo 'Commands: ' . PHP_EOL;
     $cmd_table = new ConsoleTable();
-    foreach ($commands as $cmd => $cmd_properties) {
-      $aliases = implode(', ', $cmd_properties['aliases']);
+    foreach ($commands as $command => $command_properties) {
+      $aliases = implode(', ', $command_properties['aliases']);
+      if ($command == 'mount') {
+        $aliases = "'empty comnand', " . $aliases;
+      }
       $cmd_table->addRow([
         $aliases,
-        $cmd_properties['name'],
+        $command_properties['name'],
       ]);
     }
     $cmd_table->setPadding(2);
@@ -1200,6 +1317,33 @@ function cmd_help($args) {
     $opt_table->hideBorder();
     $opt_table->display();
 
+    echo PHP_EOL;
+    echo 'Arguments: ' . PHP_EOL;
+    $arg_table = new ConsoleTable();
+    foreach ($params['arguments'] as $arg => $arg_properties) {
+      $aliases = '<' . $arg_properties['argument'] . '>';
+      $arg_table->addRow([
+        $aliases,
+        $arg_properties['name'],
+      ]);
+    }
+    $arg_table->setPadding(2);
+    $arg_table->hideBorder();
+    $arg_table->display();
+
+    echo PHP_EOL;
+    echo 'Flags: ' . PHP_EOL;
+    $flg_table = new ConsoleTable();
+    foreach ($params['flags'] as $flg => $flg_properties) {
+      $aliases = '-' . $flg_properties['key'] . ', --' . $flg . ' <' . $flg_properties['argument'] . '>';
+      $flg_table->addRow([
+        $aliases,
+        $flg_properties['name'],
+      ]);
+    }
+    $flg_table->setPadding(2);
+    $flg_table->hideBorder();
+    $flg_table->display();
   }
 
   exit(0);
@@ -1404,6 +1548,11 @@ function resolve_args($argv, $argc) {
     }
   }
 
+  if (isset($args['help']) && !isset($args['cmd'])) {
+    $args['cmd'] = 'help';
+    unset($args['help']);
+  }
+
   // fallback for wrong command order
   if ($cmd_cmd == $commands['mount']['cmd'] && isset($args['cmd'])) {
     $cmd = $args['cmd'];
@@ -1423,10 +1572,15 @@ function resolve_args($argv, $argc) {
     }
   }
 
+
+
   // check for double command
   if (isset($args['cmd']) && $cmd_cmd == $commands[$args['cmd']]['cmd']) {
-    echo 'Unexpected argument for ' . $args['cmd'] . PHP_EOL;
-    exit(1);
+    // exception for help command
+    if ($args['cmd'] != 'help') {
+      echo 'Unexpected argument for ' . $args['cmd'] . PHP_EOL;
+      exit(1);
+    }
   }
 
   return $cmd_cmd($args);
