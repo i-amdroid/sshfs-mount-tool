@@ -4,7 +4,7 @@ SSHFS Mount Tool
 SSHFS Mount Tool (SMT) — CLI tool for manage and mount SSH connections as file system volumes.  
 SMT is a wrapper around SSHFS but designed to work with minimal typing.
 
-<img src="https://github.com/i-amdroid/sshfs-mount-tool/blob/master/smt.gif" width="1036">
+<img src="https://github.com/i-amdroid/sshfs-mount-tool/blob/master/smt.gif" width="778">
 
 Requirements
 ------------
@@ -93,7 +93,7 @@ Limited support commands:
 `smt cd [<connection id>]` — Change directory to connection mount directory  
 `smt ssh [<connection id>]` — Launch SSH session  
 
-Currently supported only in default Ubuntu trminal (gnome-terminal) and default macOS terminal (Terminal.app).
+Currently supported only in default Ubuntu terminal (gnome-terminal) and default macOS terminal (Terminal.app).
 
 **Config files**
 
