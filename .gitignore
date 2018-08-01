@@ -1,4 +1,5 @@
 /tmp
 /vendor
+/.idea
 smt.yml
 smt.phar

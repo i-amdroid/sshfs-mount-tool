@@ -10,7 +10,7 @@ Requirements
 ------------
 
 * Linux/macOS
-* PHP >= 7.1
+* PHP CLI >= 7.1
 * SSHFS
 
 Instalation

@@ -213,7 +213,7 @@ function set_connection_settings($cid, $connection_settings, $use_current_dir = 
  *  Connection ID.
  *
  * @return
- *  Result of saving function (TRUE if config saved sucessfully).
+ *  Result of saving function (TRUE if config saved successfully).
  */
 function remove_connection_settings($cid) {
   $config_file = get_config_file();
@@ -233,7 +233,7 @@ function remove_connection_settings($cid) {
  *  Path to mount point in relative or absolute format.
  *
  * @return
- *  Connection ID or FALSE if connetion was not resolved.
+ *  Connection ID or FALSE if connection was not resolved.
  */
 function get_cid($mount_point) {
   global $preferences;
@@ -297,10 +297,10 @@ function match_cmd($input) {
  *  Shell command.
  *
  * @param $success_message
- *  Optional. Message for return if executing was sucessfull.
+ *  Optional. Message for return if executing was successful.
  * 
  * @return
- *  $success_message if executing was sucessfull
+ *  $success_message if executing was successful
  *  or last line of command output if executing failed.
  */
 function run_cmd($cmd, $success_message = 'Ok') {
@@ -357,10 +357,10 @@ function green($text) {
  * If multiple connections exists, user will prompted to choose one. 
  *
  * @param $mounted_only
- *  Optional. Flag for show only mounted connetions in list.
+ *  Optional. Flag for show only mounted connections in list.
  *
  * @param $show_only
- *  Optional. Flag for only showing connetions list without prompting for choose.
+ *  Optional. Flag for only showing connections list without prompting for choose.
  *
  * @param $silent
  *  Optional. Flag for silent mode.
@@ -516,7 +516,7 @@ function show_connection_settings($cid, $connection_settings) {
  *  Array of connection IDs.
  * 
  * @return
- *  Connection ID or exit script if connction ID was not resolved.
+ *  Connection ID or exit script if connection ID was not resolved.
  */
 function validate_input($input, $cids) {
   if (is_numeric($input)) {
@@ -542,7 +542,7 @@ function validate_input($input, $cids) {
 }
 
 /**
- * Promt for user input with additional conditions.
+ * Prompt for user input with additional conditions.
  *
  * @param $prompt
  *  Message for prompt.
@@ -550,8 +550,8 @@ function validate_input($input, $cids) {
  * @param $default_value
  *  Optional. Value for empty user input.
  *
- * @param $requred
- *  Optional. Flag for repeat prompt untill input will be provided.
+ * @param $required
+ *  Optional. Flag for repeat prompt until input will be provided.
  *
  * @param $hidden
  *  Optional. Flag for use hidden input.
@@ -559,9 +559,9 @@ function validate_input($input, $cids) {
  * @return
  *  User input or $default_value if input was empty.
  */
-function read_input($prompt, $default_value = NULL, $requred = FALSE, $hidden = FALSE) {
+function read_input($prompt, $default_value = NULL, $required = FALSE, $hidden = FALSE) {
 
-  if ($requred) {
+  if ($required) {
     $input = '';
     while (!$input) {
       if ($hidden) {
@@ -822,7 +822,7 @@ $commands['ssh'] = [
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_mount($args) {
   global $preferences;
@@ -845,7 +845,7 @@ function cmd_mount($args) {
   $cmd = gen_mount_cmd($cid, $password);
   $connection_settings = get_connection_settings($cid);
 
-  // check existing of mountpoint and create if needed
+  // check existing of mount point and create if needed
   if (substr($connection_settings['mount'], 0, 1) == '~') {
     $mount_dir = $preferences['home_path'] . substr($connection_settings['mount'], 1);
   }
@@ -882,7 +882,7 @@ function cmd_mount($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_unmount($args) {
 
@@ -923,7 +923,7 @@ function cmd_unmount($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_add($args) {
   global $preferences;
@@ -1003,7 +1003,7 @@ function cmd_add($args) {
     exit(0);
   }
   if (!$silent) {
-    // here can be only successed savings
+    // here can be only success savings
     echo 'Connection saved.' . PHP_EOL;
   }
   exit(0);
@@ -1016,7 +1016,7 @@ function cmd_add($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_remove($args) {
 
@@ -1030,7 +1030,7 @@ function cmd_remove($args) {
 
   remove_connection_settings($cid);
   if (!$silent) {
-    // here can be only successed removing
+    // here can be only success removing
     echo 'Connection removed.' . PHP_EOL;
   }
   exit(0);
@@ -1043,7 +1043,7 @@ function cmd_remove($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_list($args) {
 
@@ -1061,13 +1061,13 @@ function cmd_list($args) {
 }
 
 /**
- * Go to connection mount dirrectory.
+ * Go to connection mount directory.
  *
  * @param $args
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_cd($args) {
 
@@ -1093,7 +1093,7 @@ function cmd_cd($args) {
     exit(0);
   }
   else {
-    echo 'No mountpoint for ' . $cid .  ' set' . PHP_EOL;
+    echo 'No mount point for ' . $cid .  ' set' . PHP_EOL;
     exit(1);
   }
 }
@@ -1105,7 +1105,7 @@ function cmd_cd($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_ssh($args) {
 
@@ -1136,7 +1136,7 @@ function cmd_ssh($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_status($args) {
 
@@ -1153,7 +1153,7 @@ function cmd_status($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_config($args) {
   global $preferences;
@@ -1170,7 +1170,7 @@ function cmd_config($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_help($args) {
   global $commands;
@@ -1292,7 +1292,7 @@ function cmd_help($args) {
     foreach ($commands as $command => $command_properties) {
       $aliases = implode(', ', $command_properties['aliases']);
       if ($command == 'mount') {
-        $aliases = "'empty comnand', " . $aliases;
+        $aliases = "'empty command', " . $aliases;
       }
       $cmd_table->addRow([
         $aliases,
@@ -1356,7 +1356,7 @@ function cmd_help($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_version($args) {
   global $preferences;
@@ -1373,7 +1373,7 @@ function cmd_version($args) {
  *  array of arguments.
  *
  * @return
- *  Nothung.
+ *  Nothing.
  */
 function cmd_info($args) {
   global $preferences;
@@ -1415,8 +1415,8 @@ function is_global($argv) {
 }
 
 /**
- * Resolve comands and options from command line arguments.
- * Provide logic for handling fifferent amount of provided arguments,
+ * Resolve commands and options from command line arguments.
+ * Provide logic for handling different amount of provided arguments,
  * different contents and order.
  * Execute corresponding command function.
  *
@@ -1427,7 +1427,7 @@ function is_global($argv) {
  *  Amount of command line arguments.
  *
  * @return
- *  Result of command finction.
+ *  Result of command function.
  */
 function resolve_args($argv, $argc) {
   global $commands;
@@ -1460,7 +1460,7 @@ function resolve_args($argv, $argc) {
 
       $skip_next_arg = FALSE;
       foreach ($argv as $arg_key => $arg_value) {
-        // skip iterration if argument already used (for flag value)
+        // skip iteration if argument already used (for flag value)
         if (!$skip_next_arg) {
           if (substr($arg_value, 0, 1) != '-') {
             // looks like an argument

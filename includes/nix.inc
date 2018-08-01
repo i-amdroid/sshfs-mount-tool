@@ -61,12 +61,12 @@ function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
     $cmd[] = $connection_settings['server'] . ':' . $connection_settings['remote'];
   }
 
-  // mountpoint requred for mounting
+  // mount point required for mounting
   if (isset($connection_settings['mount'])) {
     $cmd[] = $connection_settings['mount'];
   }
   else {
-    echo 'No mountpoint for ' . $cid .  ' set' . PHP_EOL;
+    echo 'No mount point for ' . $cid .  ' set' . PHP_EOL;
     exit(1);
   }
 
