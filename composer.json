@@ -1,5 +1,5 @@
 {
-  "name": "iamdroid/sshfs-mount-tool",
+  "name": "i-amdroid/sshfs-mount-tool",
   "description": "CLI for manage and mount SSH connections as file system volumes.",
   "keywords": [
     "SSHFS",
