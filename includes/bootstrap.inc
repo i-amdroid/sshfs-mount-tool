@@ -45,6 +45,24 @@ function init() {
 }
 
 /**
+ * Show script version.
+ *
+ * @return
+ *  Version number or Undefined.
+ */
+function get_version() {
+  global $preferences;
+  $project_info = file_get_contents($preferences['project_info_file']);
+  $project_info = json_decode($project_info, true);
+  if (isset($project_info['version'])) {
+    return $project_info['version'];
+  } 
+  else {
+    return 'Undefined';
+  }
+}
+
+/**
  * Determine and return config file.
  *
  * @return
@@ -227,6 +245,97 @@ function remove_connection_settings($cid) {
 }
 
 /**
+ * Return subset of connection settings from configuration:
+ *  'n' - number;
+ *  'cid' - connection ID;
+ *  'title' - connection title;
+ *  'status' - connection status: Mounted/Not mounted.
+ *
+ * @param $mounted_only
+ *  Flag. Optional. Return only mounted connections.
+ *
+ * @return
+ *  Array of connection data.
+ */
+function get_connections_data($mounted_only = FALSE) {
+  $connections = get_connections();
+  $mounts = get_mounts();
+  $connections_data = [];
+  $i = 1;
+
+  foreach ($connections as $cid => $connection_settings) {
+    if (in_array($cid, $mounts)) {
+      $connections_data[] = array(
+        'n' => $i,
+        'cid' => $cid,
+        'title' => $connection_settings['title'],
+        'status' => 'Mounted',
+      );
+      $i++;
+    }
+    elseif (!$mounted_only) {
+      $connections_data[] = array(
+        'n' => $i,
+        'cid' => $cid,
+        'title' => $connection_settings['title'],
+        'status' => 'Not mounted',
+      );
+      $i++;
+    }
+  }
+
+  return $connections_data;
+}
+
+/**
+ * Prepare formated table from connections list.
+ *
+ * @param $connections_data
+ *  Array of connections data.
+ *
+ * @param $output
+ *  Output Interface.
+ *
+ * @return
+ *  Table object.
+ */
+function gen_connections_table($connections_data, $output) {
+  $table = new Table($output);
+  $table->setHeaders(array(
+    '#',
+    'ID',
+    'Title',
+    'Status',
+  ));
+
+  foreach ($connections_data as $row => $connection_data) {
+    if ($connection_data['status'] == 'Mounted') {
+      $table->addRow(array(
+        '<info>' . $connection_data['n'] . '</info>',
+        '<info>' . $connection_data['cid'] . '</info>',
+        '<info>' . $connection_data['title'] . '</info>',
+        '<info>' . $connection_data['status'] . '</info>',
+      ));
+    }
+    else {
+      $table->addRow(array(
+        $connection_data['n'],
+        $connection_data['cid'],
+        $connection_data['title'],
+        $connection_data['status'],
+      ));
+    }
+  }
+
+  $table->setStyle('compact');
+  $tableStyle = $table->getStyle();
+  $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
+  $tableStyle->setCellRowContentFormat('%s  ');
+  
+  return $table;
+}
+
+/**
  * Return connection ID by mount point.
  *
  * @param $mount_point
@@ -253,22 +362,72 @@ function get_cid($mount_point) {
 }
 
 /**
- * Check that user input match connection ID in config.
+ * Check that user input match connection ID in config
+ * or provided connections list.
  *
  * @param $input
  *  Some string.
  *
+ * @param $connections_data
+ *  Optional. Array of connections.
+ * 
  * @return
  *  Connection ID or FALSE if connetion was not resolved.
  */
-function match_cid($input) {
-  $connections = get_connections();
-  foreach ($connections as $cid => $connection_settings) {
-    if ($input == $cid) {
-      return $cid;
+function match_cid($input, $connections_data = FALSE) {
+  if (!$connections_data) {
+    $connections = get_connections();
+    foreach ($connections as $cid => $connection_settings) {
+      if ($input == $cid) {
+        return $input;
+      }
+    }
+  }
+  else {
+    foreach ($connections_data as $connection => $connection_data) {
+      if ($input == $connection_data['cid']) {
+        return $input;
+      }
     }
   }
   return FALSE;
+}
+
+/**
+ * Check that user input match connection ID or number
+ * in provided connection IDs list.
+ *
+ * @param $answer
+ *  Some string.
+ *
+ * @param $connections_data
+ *  Array of connections data.
+ * 
+ * @return
+ *  Connection ID or NULL if connection ID was not resolved.
+ */
+function validate_answer_as_connection($answer, $connections_data) {
+  $cid = NULL;
+
+  // Answer looks like a number
+  if (is_numeric($answer)) {
+    $answer = intval($answer);
+    foreach ($connections_data as $connection => $connection_data) {
+      if ($answer == $connection_data['n']) {
+        $cid = $connection_data['cid'];
+      }
+    }
+  }
+  // Answer looks like a cid
+  else {
+    foreach ($connections_data as $connection => $connection_data) {
+      if ($answer == $connection_data['cid']) {
+        $cid = $connection_data['cid'];
+      }
+    }
+  }
+
+  return $cid;
 }
 
 /**
@@ -293,199 +452,4 @@ function run_cmd($cmd, $success_message = 'Ok') {
   }
   // return last line if something goes wrong
   return $run;
-}
-
-/**
- * Promt for user input, hide it during typing and then return it.
- * Code taken from: https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
- *
- * @param $prompt
- *  Optional. Message for prompt.
- *
- * @return
- *  User input.
- */
-function readline_silent($prompt = '') {
-  $command = "/usr/bin/env bash -c 'echo OK'";
-  if (rtrim(shell_exec($command)) !== 'OK') {
-    trigger_error("Can't invoke bash");
-    return;
-  }
-  $command = "/usr/bin/env bash -c 'read -s -p \""
-    . addslashes($prompt)
-    . "\" mypassword && echo \$mypassword'";
-  $input = rtrim(shell_exec($command));
-  echo PHP_EOL;
-  return $input;
-}
-
-/**
- * Check that user input match connection ID or number
- * in provided connection IDs list.
- *
- * @param $input
- *  Some string.
- *
- * @param $cids
- *  Array of connection IDs.
- * 
- * @return
- *  Connection ID or exit script if connection ID was not resolved.
- */
-function validate_input($input, $cids) {
-  if (is_numeric($input)) {
-    $input = intval($input);
-    $cids_count = count($cids);
-    if ($input > 0 && $input <= $cids_count) {
-      $cid = $cids[$input];
-    } else {
-      echo $input . ' is not a valid connection number' . PHP_EOL;
-      exit(1);
-    }
-  }
-  else {
-    if (match_cid($input)) {
-      $cid = $input;
-    }
-    else {
-      echo $input . ' is not a valid connection ID' . PHP_EOL;
-      exit(1);
-    }
-  }
-  return $cid;
-}
-
-function validate_answer_as_connection($answer, $connections_data) {
-  $cid = NULL;
-
-  // Answer looks like a number
-  if (is_numeric($answer)) {
-    $answer = intval($answer);
-    foreach ($connections_data as $connection => $connection_data) {
-      if ($answer == $connection_data['n']) {
-        $cid = $connection_data['id'];
-      }
-    }
-  }
-  // Answer looks like a cid
-  else {
-    foreach ($connections_data as $connection => $connection_data) {
-      if ($answer == $connection_data['id']) {
-        $cid = $connection_data['id'];
-      }
-    }
-  }
-
-  return $cid;
-}
-
-/**
- * Prompt for user input with additional conditions.
- *
- * @param $prompt
- *  Message for prompt.
- *
- * @param $default_value
- *  Optional. Value for empty user input.
- *
- * @param $required
- *  Optional. Flag for repeat prompt until input will be provided.
- *
- * @param $hidden
- *  Optional. Flag for use hidden input.
- *   
- * @return
- *  User input or $default_value if input was empty.
- */
-function read_input($prompt, $default_value = NULL, $required = FALSE, $hidden = FALSE) {
-
-  if ($required) {
-    $input = '';
-    while (!$input) {
-      if ($hidden) {
-        $input = readline_silent($prompt);
-      }
-      else {
-        $input = readline($prompt);
-      }
-    }
-  }
-  else {
-    if ($hidden) {
-      $input = readline_silent($prompt);
-    }
-    else {
-      $input = readline($prompt);
-    }
-    if (!$input) {
-      $input = $default_value;
-    }
-  }
-  return $input;
-}
-
-function get_connections_data($mounted_only = FALSE) {
-  $connections = get_connections();
-  $mounts = get_mounts();
-  $connections_data = [];
-  $i = 1;
-
-  foreach ($connections as $cid => $connection_settings) {
-    if (in_array($cid, $mounts)) {
-      $connections_data[] = array(
-        'n' => $i,
-        'id' => $cid,
-        'title' => $connection_settings['title'],
-        'status' => 'Mounted',
-      );
-      $i++;
-    }
-    elseif (!$mounted_only) {
-      $connections_data[] = array(
-        'n' => $i,
-        'id' => $cid,
-        'title' => $connection_settings['title'],
-        'status' => 'Not mounted',
-      );
-      $i++;
-    }
-  }
-
-  return $connections_data;
-}
-
-function gen_connections_table($connections_data, $output) {
-  $table = new Table($output);
-  $table->setHeaders(array(
-    '#',
-    'ID',
-    'Title',
-    'Status',
-  ));
-
-  foreach ($connections_data as $row => $connection_data) {
-    if ($connection_data['status'] == 'Mounted') {
-      $table->addRow(array(
-        '<info>' . $connection_data['n'] . '</info>',
-        '<info>' . $connection_data['id'] . '</info>',
-        '<info>' . $connection_data['title'] . '</info>',
-        '<info>' . $connection_data['status'] . '</info>',
-      ));
-    }
-    else {
-      $table->addRow(array(
-        $connection_data['n'],
-        $connection_data['id'],
-        $connection_data['title'],
-        $connection_data['status'],
-      ));
-    }
-  }
-
-  $table->setStyle('compact');
-  $tableStyle = $table->getStyle();
-  $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
-  $tableStyle->setCellRowContentFormat('%s  ');
-  
-  return $table;
 }

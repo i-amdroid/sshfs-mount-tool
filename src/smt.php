@@ -63,7 +63,7 @@ if (!$first_arg_is_command) {
 }
 
 // Define app
-$app = new Application('SSHFS Mount Tool', '1.1.0');
+$app = new Application('SSHFS Mount Tool', get_version());
 
 // Add global option to the app
 $app->getDefinition()->addOption(
