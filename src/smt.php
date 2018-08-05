@@ -38,6 +38,12 @@ $commands[] = $unmount_command;
 $command_names[] = $unmount_command->getname();
 $command_aliases = array_merge($unmount_command->getAliases(), $command_aliases);
 
+// Add command
+$add_command = new UnmountCommand();
+$commands[] = $add_command;
+$command_names[] = $add_command->getname();
+$command_aliases = array_merge($add_command->getAliases(), $command_aliases);
+
 // Status command
 $status_command = new StatusCommand();
 $commands[] = $status_command;

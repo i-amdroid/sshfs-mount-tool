@@ -8,6 +8,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\Question;
+use Symfony\Component\Process\Process;
 
 class MountCommand extends Command {
 
@@ -53,16 +54,29 @@ class MountCommand extends Command {
 
         $helper = $this->getHelper('question');
         $question = new Question('Number or ID of connection [Enter, c to cancel]: ');
-        $answer = $helper->ask($input, $output, $question);
-        if ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL') {
+        $question->setValidator(function($answer) use ($connections_data) {
+          if ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL') {
+            // return from callback without $cid
+            return;
+          }
+          $cid = validate_answer_as_connection($answer, $connections_data);
+          if (!$cid) {
+            throw new \RuntimeException(
+              $answer . ' is not a valid connection number or ID'
+            );
+          }
+          else {
+            return $cid;
+          }
+        });
+        
+        $cid = $helper->ask($input, $output, $question);
+
+        if (!$cid) {
+          // canceled
           return 0;
         }
-        // Emulate $question->setValidator for pass additional parameter to validator
-        $cid = validate_answer_as_connection($answer, $connections_data);
-        if (!$cid) {
-          $output->writeln($answer . ' is not a valid connection number or ID');
-          return 2;
-        }
+        
       }
     }
 
@@ -102,9 +116,24 @@ class MountCommand extends Command {
     }
     */
 
-    $run = run_cmd($cmd, $success_message);
+    // $run = run_cmd($cmd, $success_message);
+    // $output->writeln($run);
 
-    $output->writeln($run);
+    $process = new Process($cmd);
+    $process->run();
+
+    if (!$process->isSuccessful()) {
+      // throw new ProcessFailedException($process);
+      $output->writeln($process->getErrorOutput());
+    }
+    else {
+      if ($process->getOutput()) {
+        $output->writeln($process->getOutput());
+      }
+      else {
+        $output->writeln($success_message);
+      }
+    }
 
   }
 }
