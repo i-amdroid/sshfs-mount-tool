@@ -10,6 +10,7 @@ require __DIR__ . '/../includes/bootstrap.inc';
 
 use SSHFSMountTool\Command\MountCommand;
 use SSHFSMountTool\Command\UnmountCommand;
+use SSHFSMountTool\Command\AddCommand;
 use SSHFSMountTool\Command\StatusCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
@@ -39,7 +40,7 @@ $command_names[] = $unmount_command->getname();
 $command_aliases = array_merge($unmount_command->getAliases(), $command_aliases);
 
 // Add command
-$add_command = new UnmountCommand();
+$add_command = new AddCommand();
 $commands[] = $add_command;
 $command_names[] = $add_command->getname();
 $command_aliases = array_merge($add_command->getAliases(), $command_aliases);

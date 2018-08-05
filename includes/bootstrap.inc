@@ -7,17 +7,18 @@
 
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Console\Helper\Table;
-use LucidFrame\Console\ConsoleTable; // ! tbr
+use Symfony\Component\Console\Question\Question;
+use LucidFrame\Console\ConsoleTable; // !tbr
 
 $preferences['home_path'] = $_SERVER['HOME'];
 $preferences['current_path'] = exec('pwd');
+$preferences['mount_path'] = '~/mnt';
 
 $preferences['user_config_file'] = $preferences['home_path'] . '/.config/smt/smt.yml';
 $preferences['current_config_file'] = $preferences['current_path'] . '/smt.yml';
 $preferences['project_info_file'] = __DIR__ . '/../composer.json';
 
 $preferences['os_functions_inc'] = init();
-// require_once __DIR__ . '/../includes/' . $preferences['os_functions_inc'];
 require $preferences['os_functions_inc'];
 
 $preferences['global'] = FALSE;
@@ -120,7 +121,7 @@ function get_config($config_file = FALSE) {
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
 
-  // if config file not exist yet, check and if need, create folder for it
+  // if config file not exist yet, check and create folder for it if needed
   if (!file_exists($config_file)) {
     $config_file_dir = dirname($config_file);
     if (!is_dir($config_file_dir)) {
@@ -128,6 +129,8 @@ function set_config($config, $config_file) {
     }
   }
   
+  // @todo refactor to use Symfony output and return proper values
+  // https://api.symfony.com/4.1/Symfony/Component/Console/Output/ConsoleOutput.html
   if (file_put_contents($config_file, $yaml)) {
     chmod($config_file, 0777);
     return TRUE;
@@ -179,13 +182,22 @@ function get_connection_settings($cid) {
  * @param $connection_settings
  *  Array of a connection settings.
  *
+ * @param $input
+ *  Input Interface.
+ * 
+ * @param $output
+ *  Output Interface.
+ * 
+ * @param $helper
+ *  Helper function.
+ *   
  * @param $use_current_dir
  *  Optional. Flag for use current directory for saving config file.
  * 
  * @return
  *  Result of saving function (TRUE if config saved sucessfully).
  */
-function set_connection_settings($cid, $connection_settings, $use_current_dir = FALSE) {
+function set_connection_settings($cid, $connection_settings, $input, $output, $helper, $use_current_dir = FALSE) {
   global $preferences;
   // save to current dir, no config in current dir, should not load global
   if ($use_current_dir) {
@@ -199,15 +211,36 @@ function set_connection_settings($cid, $connection_settings, $use_current_dir = 
     foreach ($config['connections'] as $key => $value) {
       if ($key == $cid) {
         // ask for rewrite
-        $overwrite = readline("Connection '" . $cid . "' already exists, overwrite it? [y/N]: ");
-        if ($overwrite == 'y' || $overwrite == 'Y' || $overwrite == 'Yes' || $overwrite == 'yes' || $overwrite == 'YES') {
+        $overwrite_question = new Question('Connection "' . $cid . '" already exists, overwrite it? [<comment>no</comment>]? ');
+        $overwrite_question->setValidator(function($answer) {
+          if ($answer == 'y' || $answer == 'Y' || $answer == 'yes' || $answer == 'Yes' || $answer == 'YES') {
+            return TRUE;
+          }
+          elseif ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL' || 
+                  $answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
+            // return from callback without value
+            return;
+          }
+          else {
+            throw new \RuntimeException(
+              $answer . ' is not a valid answer.'
+            );
+          }
+        });
+        
+        $overwrite = $helper->ask($input, $output, $overwrite_question);
+
+        if ($overwrite) {
           $config['connections'][$key] = $connection_settings;
           $connection_exist = TRUE;
         }
         else {
-          // canceling
+          // canceled
+          // @todo refactor to return proper values to command function
+          // return;
           exit(0);
         }
+
       }
     }
   }
@@ -331,6 +364,64 @@ function gen_connections_table($connections_data, $output) {
   $tableStyle = $table->getStyle();
   $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
   $tableStyle->setCellRowContentFormat('%s  ');
+  $tableStyle->setVerticalBorderChar('');
+  
+  return $table;
+}
+
+/**
+ * Prepare formated table from connection settins.
+ *
+ * @param $cid
+ *  Connection ID.
+ *
+ * @param $connection_settings
+ *  Array of connection settings.
+ * 
+ * @param $output
+ *  Output Interface.
+ *
+ * @return
+ *  Table object.
+ */
+function gen_connection_settings_table($cid, $connection_settings, $output) {
+  $table = new Table($output);
+  $table->setHeaders(array(
+    'Setting',
+    'Value',
+  ));
+
+  $table->addRow(array(
+    'id',
+    $cid,
+  ));
+
+  foreach ($connection_settings as $key => $value) {
+    if ($key == 'options') {
+      $table->addRow(array(
+        $key,
+        implode(',', $value),
+      ));
+    }
+    elseif ($key == 'password' && $value) {
+      $table->addRow(array(
+        $key,
+        '[password]',
+      ));
+    }
+    else {
+      $table->addRow(array(
+        $key,
+        $value,
+      ));
+    }
+  }
+
+  $table->setStyle('compact');
+  $tableStyle = $table->getStyle();
+  $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
+  $tableStyle->setCellRowContentFormat('%s    ');
+  $tableStyle->setVerticalBorderChar('');
   
   return $table;
 }
@@ -430,6 +521,7 @@ function validate_answer_as_connection($answer, $connections_data) {
   return $cid;
 }
 
+// !tbr
 /**
  * Execute a shell command.
  *

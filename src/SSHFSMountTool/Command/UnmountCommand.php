@@ -55,7 +55,7 @@ class UnmountCommand extends Command {
         $table->render();
 
         $helper = $this->getHelper('question');
-        $question = new Question('Number or ID of connection [Enter, c to cancel]: ');
+        $question = new Question('Number or ID of connection [<comment>cancel</comment>]: ');
         $question->setValidator(function($answer) use ($connections_data) {
           if ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL') {
             // return from callback without $cid
@@ -82,28 +82,18 @@ class UnmountCommand extends Command {
     }
   
     $cmd = gen_unmount_cmd($cid);
-    // $output->writeln($cmd);
     $connection_settings = get_connection_settings($cid);
 
-    $success_message = '';
-    if (isset($connection_settings['user'])) {
-      $success_message .= $connection_settings['user'] . '@';
+    // Verbose mesages
+    if ($output->isVerbose()) {
+      $output->writeln($cmd);
     }
-    $success_message .= $connection_settings['server'] . ' ' . '<info>unmounted</info>';
 
-    // @todo if verbose
-    /*
-    if ($verbose) {
-      echo $cmd . PHP_EOL;
-    }
-    */
-
-    // $run = run_cmd($cmd, $success_message);
-    // $output->writeln($run);
-
+    // Command execution
     $process = new Process($cmd);
     $process->run();
 
+    // Normal mmesages
     if (!$process->isSuccessful()) {
       // throw new ProcessFailedException($process);
       $output->writeln($process->getErrorOutput());
@@ -113,6 +103,11 @@ class UnmountCommand extends Command {
         $output->writeln($process->getOutput());
       }
       else {
+        $success_message = '';
+        if (isset($connection_settings['user'])) {
+          $success_message .= $connection_settings['user'] . '@';
+        }
+        $success_message .= $connection_settings['server'] . ' ' . '<info>unmounted</info>';
         $output->writeln($success_message);
       }
     }

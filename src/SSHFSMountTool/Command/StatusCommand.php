@@ -35,6 +35,12 @@ class StatusCommand extends Command {
     */
 
     $connections_data = get_connections_data();
+    // no saved connections
+    if (empty($connections_data)) {
+      $output->writeln('No saved connections');
+      // not an error
+      return 0;
+    }
     $table = gen_connections_table($connections_data, $output);
 
     $table->render();
