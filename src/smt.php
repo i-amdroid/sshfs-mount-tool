@@ -97,7 +97,7 @@ function get_config($config_file = FALSE) {
  *  Path to config file (in YAML format).
  *
  * @return
- *  TRUE if config saved sucessfully.
+ *  TRUE if config saved successfully.
  */
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
@@ -165,7 +165,7 @@ function get_connection_settings($cid) {
  *  Optional. Flag for use current directory for saving config file.
  * 
  * @return
- *  Result of saving function (TRUE if config saved sucessfully).
+ *  Result of saving function (TRUE if config saved successfully).
  */
 function set_connection_settings($cid, $connection_settings, $use_current_dir = FALSE) {
   global $preferences;
@@ -259,7 +259,7 @@ function get_cid($mount_point) {
  *  Some string.
  *
  * @return
- *  Connection ID or FALSE if connetion was not resolved.
+ *  Connection ID or FALSE if connection was not resolved.
  */
 function match_cid($input) {
   $connections = get_connections();
@@ -315,7 +315,7 @@ function run_cmd($cmd, $success_message = 'Ok') {
 }
 
 /**
- * Promt for user input, hide it during typing and then return it.
+ * Prompt for user input, hide it during typing and then return it.
  * Code taken from: https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
  *
  * @param $prompt
@@ -398,7 +398,7 @@ function choose_connection($mounted_only = FALSE, $show_only = FALSE, $silent = 
     }
   }
 
-  // one mount, should work automaticaly only when exist only one connection in config file
+  // one mount, should work automatically only when exist only one connection in config file
   if ($mounted_only && count($connections) == 1) {
     if (count($mounts) == 1) {
       return $mounts[0];
