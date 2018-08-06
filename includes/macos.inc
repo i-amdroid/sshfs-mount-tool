@@ -4,12 +4,12 @@ $preferences['mount_cmd'] = 'sshfs';
 $preferences['unmount_cmd'] = 'umount';
 $preferences['mounts_list_cmd'] = 'mount';
 $preferences['editor'] = '$EDITOR';
-$preferences['default_options'] = array(
+$preferences['default_options'] = [
   'follow_symlinks',
   // 'allow_other',
   // 'defer_permissions',
   'StrictHostKeyChecking=no',
-);
+];
 
 /**
  * Return shell command for mount.
@@ -23,7 +23,7 @@ $preferences['default_options'] = array(
  * @param $masked
  *  Optional. Flag for generate command with masked password,
  *  for showing in console.
- *  
+ *
  * @return
  *  Shell command.
  */
@@ -57,7 +57,8 @@ function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
   $cmd[] = $preferences['mount_cmd'];
   if ($connection_settings['user']) {
     $cmd[] = $connection_settings['user'] . '@' . $connection_settings['server'] . ':' . $connection_settings['remote'];
-  } else {
+  }
+  else {
     $cmd[] = $connection_settings['server'] . ':' . $connection_settings['remote'];
   }
 
@@ -66,7 +67,7 @@ function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
     $cmd[] = $connection_settings['mount'];
   }
   else {
-    echo 'No mount point for ' . $cid .  ' set' . PHP_EOL;
+    echo 'No mount point for ' . $cid . ' set' . PHP_EOL;
     exit(1);
   }
 
@@ -134,7 +135,8 @@ function get_mounts() {
 function run_terminal_cmd($cmd, $new_tab = TRUE) {
   if ($new_tab) {
     return shell_exec('osascript -e \'tell application "Terminal" to activate\' -e \'tell application "System Events" to tell process "Terminal" to keystroke "t" using command down\' -e \'tell application "Terminal" to do script "' . $cmd . '" in selected tab of the front window\'');
-  } else {
+  }
+  else {
     return shell_exec('osascript -e \'tell application "Terminal" to do script "' . $cmd . '"\'');
   }
 }

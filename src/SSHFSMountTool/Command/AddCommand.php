@@ -5,8 +5,6 @@ namespace SSHFSMountTool\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\Question;
 
 class AddCommand extends Command {
@@ -26,7 +24,7 @@ class AddCommand extends Command {
 
     // Server, required
     $server = new Question('Server: ');
-    $server->setValidator(function($answer) {
+    $server->setValidator(function ($answer) {
       if (trim($answer) == '') {
         throw new \Exception('Server is required');
       }
@@ -53,7 +51,7 @@ class AddCommand extends Command {
     // Key
     $prompt_key = ($output->isVerbose()) ? 'Path to key file. Skip for using password auth [<comment>~/.ssh/id_rsa</comment>, n to skip]: ' : 'Key file. [<comment>~/.ssh/id_rsa</comment>, n to skip]: ';
     $key = new Question($prompt_key, '~/.ssh/id_rsa');
-    $key->setValidator(function($answer) {
+    $key->setValidator(function ($answer) {
       if ($answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
         return;
       }
@@ -70,7 +68,7 @@ class AddCommand extends Command {
       $domain = explode('.', $connection_settings['server']);
       if (count($domain) > 1) {
         // domain without zone
-        $default_title =  $domain[count($domain) - 2];
+        $default_title = $domain[count($domain) - 2];
       }
       else {
         // complex domain name, so just print full domain
@@ -92,14 +90,14 @@ class AddCommand extends Command {
     $prompt_options = ($output->isVerbose()) ? 'Mount options, separated by comma []: ' : 'Mount options []: ';
     $options_question = new Question($prompt_options);
     $options = $helper->ask($input, $output, $options_question);
-    $options = explode (',', $options);
+    $options = explode(',', $options);
     $options = array_map('trim', $options);
     $connection_settings['options'] = array_filter($options);
 
     // Title
     $title_question = new Question('Connection title [<comment>' . $default_title . '</comment>]: ', $default_title);
     $title = $helper->ask($input, $output, $title_question);
-    $connection_settings = array('title' => $title) + $connection_settings;
+    $connection_settings = ['title' => $title] + $connection_settings;
 
     // try to suggest default connection id
     $default_cid = preg_replace('#[aeiouy\-_\s]+#i', '', substr($connection_settings['title'], 1));
@@ -107,7 +105,7 @@ class AddCommand extends Command {
     $default_cid = substr($default_cid, 0, 3);
 
     // Connection ID
-    $prompt_cid = ($output->isVerbose()) ? 'Connection ID. Used as shortcut [<comment>' . $default_cid . '</comment>]: ' : 'Connection ID [<comment>' . $default_cid . '</comment>]: ';
+    $prompt_cid = ($output->isVerbose()) ? 'Connection ID. Used as shortcut, must be unique [<comment>' . $default_cid . '</comment>]: ' : 'Connection ID [<comment>' . $default_cid . '</comment>]: ';
     $cid_question = new Question($prompt_cid, $default_cid);
     $cid = $helper->ask($input, $output, $cid_question);
 
@@ -120,20 +118,20 @@ class AddCommand extends Command {
     }
 
     // Saving
-    $prompt_save = ($output->isVerbose()) ? 'Save config [<comment>y — globaly</comment> / l — localy (current directory) / n, c to cancel]? ' : 'Save config [<comment>y — globaly</comment> / l — localy / n, c to cancel]? ';
+    $prompt_save = ($output->isVerbose()) ? 'Save config [<comment>y — globally</comment> / l — locally (current directory) / n, c to cancel]? ' : 'Save config [<comment>y — globally</comment> / l — locally / n, c to cancel]? ';
     $save_question = new Question($prompt_save);
-    $save_question->setValidator(function($answer) {
-      if ($answer == '' || $answer == 'g' || $answer == 'G' || $answer == 'globaly' || $answer == 'Globaly' || $answer == 'GLOBALY' || 
-          $answer == 'y' || $answer == 'Y' || $answer == 'yes' || $answer == 'Yes' || $answer == 'YES') {
+    $save_question->setValidator(function ($answer) {
+      if ($answer == '' || $answer == 'g' || $answer == 'G' || $answer == 'globally' || $answer == 'Globally' || $answer == 'GLOBALLY' ||
+        $answer == 'y' || $answer == 'Y' || $answer == 'yes' || $answer == 'Yes' || $answer == 'YES') {
         // return from callback without $cid
         return 'global';
       }
-      elseif ($answer == 'l' || $answer == 'L' || $answer == 'localy' || $answer == 'Localy' || $answer == 'LOCALY') {
+      elseif ($answer == 'l' || $answer == 'L' || $answer == 'locally' || $answer == 'Locally' || $answer == 'LOCALLY') {
         // return from callback without $cid
         return 'local';
       }
-      elseif ($answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL' || 
-              $answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
+      elseif ($answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL' ||
+        $answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
         // return from callback without value
         return;
       }
@@ -143,7 +141,7 @@ class AddCommand extends Command {
         );
       }
     });
-    
+
     $save = $helper->ask($input, $output, $save_question);
 
     if ($save == 'global') {

@@ -54,7 +54,7 @@ class MountCommand extends Command {
 
         $helper = $this->getHelper('question');
         $question = new Question('Number or ID of connection [<comment>cancel</comment>]: ');
-        $question->setValidator(function($answer) use ($connections_data) {
+        $question->setValidator(function ($answer) use ($connections_data) {
           if ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL') {
             // return from callback without $cid
             return;
@@ -69,14 +69,14 @@ class MountCommand extends Command {
             return $cid;
           }
         });
-        
+
         $cid = $helper->ask($input, $output, $question);
 
         if (!$cid) {
           // canceled
           return 0;
         }
-        
+
       }
     }
 
@@ -86,7 +86,7 @@ class MountCommand extends Command {
     else {
       $password = FALSE;
     }
-    
+
     $cmd = gen_mount_cmd($cid, $password);
     //$output->writeln($cmd);
     $connection_settings = get_connection_settings($cid);
@@ -102,7 +102,7 @@ class MountCommand extends Command {
       mkdir($mount_dir, 0777, TRUE);
     }
 
-    // Verbose mesages
+    // Verbose messages
     if ($output->isVerbose()) {
       $masked_cmd = gen_mount_cmd($cid, $password, TRUE);
       $output->writeln($masked_cmd);
@@ -112,7 +112,7 @@ class MountCommand extends Command {
     $process = new Process($cmd);
     $process->run();
 
-    // Normal mmesages
+    // Normal massages
     if (!$process->isSuccessful()) {
       // throw new ProcessFailedException($process);
       $output->writeln($process->getErrorOutput());
@@ -122,11 +122,7 @@ class MountCommand extends Command {
         $output->writeln($process->getOutput());
       }
       else {
-        $success_message = '';
-        if (isset($connection_settings['user'])) {
-          $success_message .= $connection_settings['user'] . '@';
-        }
-        $success_message .= $connection_settings['server'] . ' ' . '<info>mounted</info>' . ' to ' . $connection_settings['mount'];
+        $success_message = $connection_settings['title'] . ' ' . '<info>mounted</info>' . ' to ' . $connection_settings['mount'];
         $output->writeln($success_message);
       }
     }

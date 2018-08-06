@@ -8,7 +8,6 @@
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Question\Question;
-use LucidFrame\Console\ConsoleTable; // !tbr
 
 $preferences['home_path'] = $_SERVER['HOME'];
 $preferences['current_path'] = exec('pwd');
@@ -54,10 +53,10 @@ function init() {
 function get_version() {
   global $preferences;
   $project_info = file_get_contents($preferences['project_info_file']);
-  $project_info = json_decode($project_info, true);
+  $project_info = json_decode($project_info, TRUE);
   if (isset($project_info['version'])) {
     return $project_info['version'];
-  } 
+  }
   else {
     return 'Undefined';
   }
@@ -102,7 +101,7 @@ function get_config($config_file = FALSE) {
     return Yaml::parseFile($config_file);
   }
   else {
-    return array();
+    return [];
   }
 }
 
@@ -116,7 +115,7 @@ function get_config($config_file = FALSE) {
  *  Path to config file (in YAML format).
  *
  * @return
- *  TRUE if config saved sucessfully.
+ *  TRUE if config saved successfully.
  */
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
@@ -128,7 +127,7 @@ function set_config($config, $config_file) {
       mkdir($config_file_dir, 0777, TRUE);
     }
   }
-  
+
   // @todo refactor to use Symfony output and return proper values
   // https://api.symfony.com/4.1/Symfony/Component/Console/Output/ConsoleOutput.html
   if (file_put_contents($config_file, $yaml)) {
@@ -153,7 +152,7 @@ function get_connections() {
     return $config['connections'];
   }
   else {
-    return array();
+    return [];
   }
 }
 
@@ -184,18 +183,18 @@ function get_connection_settings($cid) {
  *
  * @param $input
  *  Input Interface.
- * 
+ *
  * @param $output
  *  Output Interface.
- * 
+ *
  * @param $helper
  *  Helper function.
- *   
+ *
  * @param $use_current_dir
  *  Optional. Flag for use current directory for saving config file.
- * 
+ *
  * @return
- *  Result of saving function (TRUE if config saved sucessfully).
+ *  Result of saving function (TRUE if config saved successfully).
  */
 function set_connection_settings($cid, $connection_settings, $input, $output, $helper, $use_current_dir = FALSE) {
   global $preferences;
@@ -212,12 +211,12 @@ function set_connection_settings($cid, $connection_settings, $input, $output, $h
       if ($key == $cid) {
         // ask for rewrite
         $overwrite_question = new Question('Connection "' . $cid . '" already exists, overwrite it? [<comment>no</comment>]? ');
-        $overwrite_question->setValidator(function($answer) {
+        $overwrite_question->setValidator(function ($answer) {
           if ($answer == 'y' || $answer == 'Y' || $answer == 'yes' || $answer == 'Yes' || $answer == 'YES') {
             return TRUE;
           }
-          elseif ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL' || 
-                  $answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
+          elseif ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL' ||
+            $answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
             // return from callback without value
             return;
           }
@@ -227,7 +226,7 @@ function set_connection_settings($cid, $connection_settings, $input, $output, $h
             );
           }
         });
-        
+
         $overwrite = $helper->ask($input, $output, $overwrite_question);
 
         if ($overwrite) {
@@ -298,21 +297,21 @@ function get_connections_data($mounted_only = FALSE) {
 
   foreach ($connections as $cid => $connection_settings) {
     if (in_array($cid, $mounts)) {
-      $connections_data[] = array(
+      $connections_data[] = [
         'n' => $i,
         'cid' => $cid,
         'title' => $connection_settings['title'],
         'status' => 'Mounted',
-      );
+      ];
       $i++;
     }
     elseif (!$mounted_only) {
-      $connections_data[] = array(
+      $connections_data[] = [
         'n' => $i,
         'cid' => $cid,
         'title' => $connection_settings['title'],
         'status' => 'Not mounted',
-      );
+      ];
       $i++;
     }
   }
@@ -321,7 +320,7 @@ function get_connections_data($mounted_only = FALSE) {
 }
 
 /**
- * Prepare formated table from connections list.
+ * Prepare formatted table from connections list.
  *
  * @param $connections_data
  *  Array of connections data.
@@ -334,29 +333,29 @@ function get_connections_data($mounted_only = FALSE) {
  */
 function gen_connections_table($connections_data, $output) {
   $table = new Table($output);
-  $table->setHeaders(array(
+  $table->setHeaders([
     '#',
     'ID',
     'Title',
     'Status',
-  ));
+  ]);
 
   foreach ($connections_data as $row => $connection_data) {
     if ($connection_data['status'] == 'Mounted') {
-      $table->addRow(array(
+      $table->addRow([
         '<info>' . $connection_data['n'] . '</info>',
         '<info>' . $connection_data['cid'] . '</info>',
         '<info>' . $connection_data['title'] . '</info>',
         '<info>' . $connection_data['status'] . '</info>',
-      ));
+      ]);
     }
     else {
-      $table->addRow(array(
+      $table->addRow([
         $connection_data['n'],
         $connection_data['cid'],
         $connection_data['title'],
         $connection_data['status'],
-      ));
+      ]);
     }
   }
 
@@ -365,19 +364,19 @@ function gen_connections_table($connections_data, $output) {
   $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
   $tableStyle->setCellRowContentFormat('%s  ');
   $tableStyle->setVerticalBorderChar('');
-  
+
   return $table;
 }
 
 /**
- * Prepare formated table from connection settins.
+ * Prepare formatted table from connection settings.
  *
  * @param $cid
  *  Connection ID.
  *
  * @param $connection_settings
  *  Array of connection settings.
- * 
+ *
  * @param $output
  *  Output Interface.
  *
@@ -386,34 +385,34 @@ function gen_connections_table($connections_data, $output) {
  */
 function gen_connection_settings_table($cid, $connection_settings, $output) {
   $table = new Table($output);
-  $table->setHeaders(array(
+  $table->setHeaders([
     'Setting',
     'Value',
-  ));
+  ]);
 
-  $table->addRow(array(
+  $table->addRow([
     'id',
     $cid,
-  ));
+  ]);
 
   foreach ($connection_settings as $key => $value) {
     if ($key == 'options') {
-      $table->addRow(array(
+      $table->addRow([
         $key,
         implode(',', $value),
-      ));
+      ]);
     }
     elseif ($key == 'password' && $value) {
-      $table->addRow(array(
+      $table->addRow([
         $key,
         '[password]',
-      ));
+      ]);
     }
     else {
-      $table->addRow(array(
+      $table->addRow([
         $key,
         $value,
-      ));
+      ]);
     }
   }
 
@@ -422,7 +421,7 @@ function gen_connection_settings_table($cid, $connection_settings, $output) {
   $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
   $tableStyle->setCellRowContentFormat('%s    ');
   $tableStyle->setVerticalBorderChar('');
-  
+
   return $table;
 }
 
@@ -461,9 +460,9 @@ function get_cid($mount_point) {
  *
  * @param $connections_data
  *  Optional. Array of connections.
- * 
+ *
  * @return
- *  Connection ID or FALSE if connetion was not resolved.
+ *  Connection ID or FALSE if connection was not resolved.
  */
 function match_cid($input, $connections_data = FALSE) {
   if (!$connections_data) {
@@ -493,7 +492,7 @@ function match_cid($input, $connections_data = FALSE) {
  *
  * @param $connections_data
  *  Array of connections data.
- * 
+ *
  * @return
  *  Connection ID or NULL if connection ID was not resolved.
  */
@@ -530,7 +529,7 @@ function validate_answer_as_connection($answer, $connections_data) {
  *
  * @param $success_message
  *  Optional. Message for return if executing was successful.
- * 
+ *
  * @return
  *  $success_message if executing was successful
  *  or last line of command output if executing failed.
