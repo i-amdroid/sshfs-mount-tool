@@ -83,7 +83,7 @@ function get_config($config_file = FALSE) {
     return Yaml::parseFile($config_file);
   }
   else {
-    return array();
+    return [];
   }
 }
 
@@ -109,7 +109,7 @@ function set_config($config, $config_file) {
       mkdir($config_file_dir, 0777, TRUE);
     }
   }
-  
+
   if (file_put_contents($config_file, $yaml)) {
     chmod($config_file, 0777);
     return TRUE;
@@ -132,7 +132,7 @@ function get_connections() {
     return $config['connections'];
   }
   else {
-    return array();
+    return [];
   }
 }
 
@@ -163,7 +163,7 @@ function get_connection_settings($cid) {
  *
  * @param $use_current_dir
  *  Optional. Flag for use current directory for saving config file.
- * 
+ *
  * @return
  *  Result of saving function (TRUE if config saved successfully).
  */
@@ -298,7 +298,7 @@ function match_cmd($input) {
  *
  * @param $success_message
  *  Optional. Message for return if executing was successful.
- * 
+ *
  * @return
  *  $success_message if executing was successful
  *  or last line of command output if executing failed.
@@ -316,7 +316,8 @@ function run_cmd($cmd, $success_message = 'Ok') {
 
 /**
  * Prompt for user input, hide it during typing and then return it.
- * Code taken from: https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
+ * Code taken from:
+ * https://stackoverflow.com/questions/187736/command-line-password-prompt-in-php
  *
  * @param $prompt
  *  Optional. Message for prompt.
@@ -354,17 +355,18 @@ function green($text) {
 /**
  * Choose connection from config and return it.
  * If only one connection exist, it will be returned automatically.
- * If multiple connections exists, user will prompted to choose one. 
+ * If multiple connections exists, user will prompted to choose one.
  *
  * @param $mounted_only
  *  Optional. Flag for show only mounted connections in list.
  *
  * @param $show_only
- *  Optional. Flag for only showing connections list without prompting for choose.
+ *  Optional. Flag for only showing connections list without prompting for
+ *   choose.
  *
  * @param $silent
  *  Optional. Flag for silent mode.
- *  
+ *
  * @return
  *  Connection ID.
  */
@@ -514,7 +516,7 @@ function show_connection_settings($cid, $connection_settings) {
  *
  * @param $cids
  *  Array of connection IDs.
- * 
+ *
  * @return
  *  Connection ID or exit script if connection ID was not resolved.
  */
@@ -524,7 +526,8 @@ function validate_input($input, $cids) {
     $cids_count = count($cids);
     if ($input > 0 && $input <= $cids_count) {
       $cid = $cids[$input];
-    } else {
+    }
+    else {
       echo $input . ' is not a valid connection number' . PHP_EOL;
       exit(1);
     }
@@ -555,7 +558,7 @@ function validate_input($input, $cids) {
  *
  * @param $hidden
  *  Optional. Flag for use hidden input.
- *   
+ *
  * @return
  *  User input or $default_value if input was empty.
  */
@@ -591,7 +594,8 @@ function read_input($prompt, $default_value = NULL, $required = FALSE, $hidden =
  *
  * arguments - values for command functions.
  * options - flags for altering command functions behaviour.
- * flags - flags with value for providing additional parameters to command functions.
+ * flags - flags with value for providing additional parameters to command
+ * functions.
  *
  * This array used for resolving command line arguments
  * and generating help.
@@ -662,7 +666,7 @@ $params['flags']['password'] = [
  * optional_args - list of optional arguments.
  * cms - command function.
  *
- * This array used for resolving commands 
+ * This array used for resolving commands
  * and generating help.
  */
 $commands = [];
@@ -694,7 +698,7 @@ $commands['unmount'] = [
     'silent' => $params['options']['silent'],
     'cid' => $params['arguments']['cid'],
   ],
-  'cmd' => 'cmd_unmount', 
+  'cmd' => 'cmd_unmount',
 ];
 
 $commands['add'] = [
@@ -705,7 +709,7 @@ $commands['add'] = [
   'optional_args' => [
     'verbose' => $params['options']['verbose'],
   ],
-  'cmd' => 'cmd_add', 
+  'cmd' => 'cmd_add',
 ];
 
 $commands['remove'] = [
@@ -720,7 +724,7 @@ $commands['remove'] = [
     // 'yes' => $params['options']['yes'],
     'cid' => $params['arguments']['cid'],
   ],
-  'cmd' => 'cmd_remove', 
+  'cmd' => 'cmd_remove',
 ];
 
 $commands['list'] = [
@@ -733,7 +737,7 @@ $commands['list'] = [
     'global' => $params['options']['global'],
     'cid' => $params['arguments']['cid'],
   ],
-  'cmd' => 'cmd_list', 
+  'cmd' => 'cmd_list',
 ];
 
 $commands['status'] = [
@@ -745,7 +749,7 @@ $commands['status'] = [
   'optional_args' => [
     'global' => $params['options']['global'],
   ],
-  'cmd' => 'cmd_status', 
+  'cmd' => 'cmd_status',
 ];
 
 $commands['config'] = [
@@ -770,7 +774,7 @@ $commands['help'] = [
   'optional_args' => [
     'cmd' => $params['arguments']['cmd'],
   ],
-  'cmd' => 'cmd_help', 
+  'cmd' => 'cmd_help',
 ];
 
 $commands['version'] = [
@@ -801,7 +805,7 @@ $commands['cd'] = [
   'optional_args' => [
     'cid' => $params['arguments']['cid'],
   ],
-  'cmd' => 'cmd_cd', 
+  'cmd' => 'cmd_cd',
 ];
 
 $commands['ssh'] = [
@@ -812,7 +816,7 @@ $commands['ssh'] = [
   'optional_args' => [
     'cid' => $params['arguments']['cid'],
   ],
-  'cmd' => 'cmd_ssh', 
+  'cmd' => 'cmd_ssh',
 ];
 
 /**
@@ -826,8 +830,8 @@ $commands['ssh'] = [
  */
 function cmd_mount($args) {
   global $preferences;
-  $silent = (isset($args['silent'])) ? true : false;
-  $verbose = (isset($args['verbose'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
+  $verbose = (isset($args['verbose'])) ? TRUE : FALSE;
 
   if (isset($args['cid'])) {
     $cid = $args['cid'];
@@ -886,8 +890,8 @@ function cmd_mount($args) {
  */
 function cmd_unmount($args) {
 
-  $silent = (isset($args['silent'])) ? true : false;
-  $verbose = (isset($args['verbose'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
+  $verbose = (isset($args['verbose'])) ? TRUE : FALSE;
 
   if (isset($args['cid'])) {
     $cid = $args['cid'];
@@ -927,8 +931,8 @@ function cmd_unmount($args) {
  */
 function cmd_add($args) {
   global $preferences;
-  $silent = (isset($args['silent'])) ? true : false;
-  $verbose = (isset($args['verbose'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
+  $verbose = (isset($args['verbose'])) ? TRUE : FALSE;
 
   $connection_settings = [];
   $prompt_server = ($verbose) ? 'Server (required): ' : 'Server: ';
@@ -954,7 +958,7 @@ function cmd_add($args) {
     $domain = explode('.', $connection_settings['server']);
     if (count($domain) > 1) {
       // domain without zone
-      $default_title =  $domain[count($domain) - 2];
+      $default_title = $domain[count($domain) - 2];
     }
     else {
       // complex domain name, so just print full domain
@@ -966,18 +970,18 @@ function cmd_add($args) {
   $connection_settings['mount'] = read_input($prompt_mount, $default_mount);
 
   $connection_settings['remote'] = read_input('Remote directory: ');
- 
+
   $prompt_options = ($verbose) ? 'Mount options, separated by comma: ' : 'Mount options : ';
   $options = read_input($prompt_options, '');
-  $options = explode (',', $options);
+  $options = explode(',', $options);
   $options = array_map('trim', $options);
   $connection_settings['options'] = array_filter($options);
 
   $prompt_title = ($verbose) ? 'Connection title [Enter] - "' . $default_title . '": ' : 'Connection title: ';
-  
+
   $title = read_input($prompt_title, $default_title);
   // add title to the begining of the list
-  $connection_settings = array('title' => $title) + $connection_settings;
+  $connection_settings = ['title' => $title] + $connection_settings;
 
   $prompt_cid = ($verbose) ? 'Connection ID. Used as shortcut. [Enter] - "' . $default_title . '": ' : 'Connection ID: ';
   $cid = read_input($prompt_cid, $default_title);
@@ -1020,7 +1024,7 @@ function cmd_add($args) {
  */
 function cmd_remove($args) {
 
-  $silent = (isset($args['silent'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
@@ -1047,7 +1051,7 @@ function cmd_remove($args) {
  */
 function cmd_list($args) {
 
-  $silent = (isset($args['silent'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
@@ -1072,7 +1076,7 @@ function cmd_list($args) {
 function cmd_cd($args) {
 
   global $preferences;
-  $silent = (isset($args['silent'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
@@ -1093,7 +1097,7 @@ function cmd_cd($args) {
     exit(0);
   }
   else {
-    echo 'No mount point for ' . $cid .  ' set' . PHP_EOL;
+    echo 'No mount point for ' . $cid . ' set' . PHP_EOL;
     exit(1);
   }
 }
@@ -1109,7 +1113,7 @@ function cmd_cd($args) {
  */
 function cmd_ssh($args) {
 
-  $silent = (isset($args['silent'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
   if (isset($args['cid'])) {
     $cid = $args['cid'];
   }
@@ -1140,7 +1144,7 @@ function cmd_ssh($args) {
  */
 function cmd_status($args) {
 
-  $silent = (isset($args['silent'])) ? true : false;
+  $silent = (isset($args['silent'])) ? TRUE : FALSE;
   choose_connection(FALSE, TRUE, $silent);
 
   exit(0);
@@ -1281,7 +1285,7 @@ function cmd_help($args) {
   else {
 
     // help for all commands
-    echo 'SSHFS Mount Tool'. PHP_EOL;
+    echo 'SSHFS Mount Tool' . PHP_EOL;
     echo 'Tool for manage and mount SSH connections as file system volumes.' . PHP_EOL;
     echo PHP_EOL;
     echo 'Usage: ' . PHP_EOL;
@@ -1361,7 +1365,7 @@ function cmd_help($args) {
 function cmd_version($args) {
   global $preferences;
   $project_info = file_get_contents($preferences['project_info_file']);
-  $project_info = json_decode($project_info, true);
+  $project_info = json_decode($project_info, TRUE);
   echo $project_info['version'] . PHP_EOL;
   exit(0);
 }
@@ -1379,14 +1383,14 @@ function cmd_info($args) {
   global $preferences;
   $info = [];
   $project_info = file_get_contents($preferences['project_info_file']);
-  $project_info = json_decode($project_info, true);
+  $project_info = json_decode($project_info, TRUE);
   $info[] = 'SSHFS Mount Tool v' . $project_info['version'];
   exec('sshfs --version 2> /dev/null', $info);
   $info[] = 'PHP v' . PHP_VERSION;
 
   // @todo check for other dependencies
   // @todo show as table "dependency version : status"
-  
+
   foreach ($info as $key => $line) {
     echo $line . PHP_EOL;
   }
@@ -1442,7 +1446,7 @@ function resolve_args($argv, $argc) {
     // has args
 
     // remove first arg - script name
-    array_shift($argv);  
+    array_shift($argv);
 
     // check new first arg is cmd
     $cmd = match_cmd($argv[0]);
@@ -1537,7 +1541,7 @@ function resolve_args($argv, $argc) {
               echo 'Unknown option ' . $arg_value . PHP_EOL;
               exit(1);
             }
-            
+
           }
         }
         else {
@@ -1562,7 +1566,7 @@ function resolve_args($argv, $argc) {
 
   // fallback for wrong command order for help
   if ($cmd_cmd != $commands['help']['cmd'] && isset($args['cmd']) && $args['cmd'] == 'help' ||
-      $cmd_cmd != $commands['help']['cmd'] && isset($args['help'])) {
+    $cmd_cmd != $commands['help']['cmd'] && isset($args['help'])) {
     foreach ($commands as $cmd => $command_settings) {
       if ($cmd_cmd == $command_settings['cmd']) {
         $args['cmd'] = $cmd;
@@ -1571,7 +1575,6 @@ function resolve_args($argv, $argc) {
       }
     }
   }
-
 
 
   // check for double command
