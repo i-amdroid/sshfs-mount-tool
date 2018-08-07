@@ -26,58 +26,12 @@ class MountCommand extends Command {
 
     global $preferences;
 
-    if ($input->getArgument('connection_id')) {
-      $cid = $input->getArgument('connection_id');
-      if (!match_cid($cid)) {
-        $output->writeln($cid . ' is not a valid connection ID');
-        return 2;
-      }
-    }
-    // cid not provided
-    else {
-      $connections_data = get_connections_data();
+    $helper = $this->getHelper('question');
+    $cid = cid_resolver($input, $output, $helper);
 
-      // no saved connections
-      if (empty($connections_data)) {
-        $output->writeln('No saved connections');
-        // not an error
-        return 0;
-      }
-      // one connection
-      elseif (count($connections_data) == 1) {
-        $cid = $connections_data[0]['cid'];
-      }
-      // multiple connections
-      else {
-        $table = gen_connections_table($connections_data, $output);
-        $table->render();
-
-        $helper = $this->getHelper('question');
-        $question = new Question('Number or ID of connection [<comment>cancel</comment>]: ');
-        $question->setValidator(function ($answer) use ($connections_data) {
-          if ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL') {
-            // return from callback without $cid
-            return;
-          }
-          $cid = validate_answer_as_connection($answer, $connections_data);
-          if (!$cid) {
-            throw new \RuntimeException(
-              $answer . ' is not a valid connection number or ID'
-            );
-          }
-          else {
-            return $cid;
-          }
-        });
-
-        $cid = $helper->ask($input, $output, $question);
-
-        if (!$cid) {
-          // canceled
-          return 0;
-        }
-
-      }
+    if (!$cid) {
+      // canceled
+      return 0;
     }
 
     if ($input->getOption('password')) {

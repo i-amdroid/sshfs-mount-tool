@@ -11,6 +11,7 @@ require __DIR__ . '/../includes/bootstrap.inc';
 use SSHFSMountTool\Command\MountCommand;
 use SSHFSMountTool\Command\UnmountCommand;
 use SSHFSMountTool\Command\AddCommand;
+use SSHFSMountTool\Command\RemoveCommand;
 use SSHFSMountTool\Command\StatusCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
@@ -44,6 +45,12 @@ $add_command = new AddCommand();
 $commands[] = $add_command;
 $command_names[] = $add_command->getname();
 $command_aliases = array_merge($add_command->getAliases(), $command_aliases);
+
+// Remove command
+$remove_command = new RemoveCommand();
+$commands[] = $remove_command;
+$command_names[] = $remove_command->getname();
+$command_aliases = array_merge($remove_command->getAliases(), $command_aliases);
 
 // Status command
 $status_command = new StatusCommand();

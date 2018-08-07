@@ -16,7 +16,7 @@ class StatusCommand extends Command {
     $this->setAliases([
       'st',
     ]);
-    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the conntection');
+    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
 
   }
 
