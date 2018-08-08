@@ -14,6 +14,7 @@ use SSHFSMountTool\Command\AddCommand;
 use SSHFSMountTool\Command\RemoveCommand;
 use SSHFSMountTool\Command\ListCommand;
 use SSHFSMountTool\Command\StatusCommand;
+use SSHFSMountTool\Command\ConfigCommand;
 use SSHFSMountTool\Command\HelpCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
@@ -29,6 +30,7 @@ $command_list = [
   'SSHFSMountTool\Command\RemoveCommand',
   'SSHFSMountTool\Command\ListCommand',
   'SSHFSMountTool\Command\StatusCommand',
+  'SSHFSMountTool\Command\ConfigCommand',
   'SSHFSMountTool\Command\HelpCommand',
 ];
 $command_names = [];
