@@ -13,6 +13,7 @@ use SSHFSMountTool\Command\UnmountCommand;
 use SSHFSMountTool\Command\AddCommand;
 use SSHFSMountTool\Command\RemoveCommand;
 use SSHFSMountTool\Command\StatusCommand;
+use SSHFSMountTool\Command\HelpCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
@@ -57,6 +58,12 @@ $status_command = new StatusCommand();
 $commands[] = $status_command;
 $command_names[] = $status_command->getname();
 $command_aliases = array_merge($status_command->getAliases(), $command_aliases);
+
+// Help command
+$help_command = new HelpCommand();
+$commands[] = $help_command;
+$command_names[] = $help_command->getname();
+$command_aliases = array_merge($help_command->getAliases(), $command_aliases);
 
 $aliases = array_merge($command_names, $command_aliases, $default_commands);
 
