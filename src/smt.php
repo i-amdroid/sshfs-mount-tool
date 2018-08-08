@@ -17,6 +17,8 @@ use SSHFSMountTool\Command\StatusCommand;
 use SSHFSMountTool\Command\ConfigCommand;
 use SSHFSMountTool\Command\InfoCommand;
 use SSHFSMountTool\Command\HelpCommand;
+use SSHFSMountTool\Command\CdCommand;
+use SSHFSMountTool\Command\SshCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
@@ -34,6 +36,8 @@ $command_list = [
   'SSHFSMountTool\Command\ConfigCommand',
   'SSHFSMountTool\Command\InfoCommand',
   'SSHFSMountTool\Command\HelpCommand',
+  'SSHFSMountTool\Command\CdCommand',
+  'SSHFSMountTool\Command\SshCommand',
 ];
 $command_names = [];
 $command_aliases = [];
@@ -71,17 +75,21 @@ $app = new Application('SSHFS Mount Tool', get_version());
 $app->getDefinition()->addOption(
   new InputOption('global', 'g', InputOption::VALUE_NONE, 'Use global connections')
 );
+
+// Add info command as app option
+$app->getDefinition()->addOption(
+  new InputOption('info', 'i', InputOption::VALUE_NONE, 'Display information about dependencies')
+);
+
+// Handle global and info options
 $dispatcher = new EventDispatcher();
 $app->setDispatcher($dispatcher);
 
-$app->getDefinition()->addOption(
-  new InputOption('info', 'i', InputOption::VALUE_NONE, 'Show information about dependencies')
-);
-
 $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $event) {
+
   global $preferences;
-  // gets the input instance
   $input = $event->getInput();
+
   if ($input->getOption('global')) {
     $preferences['global'] = TRUE;
   }
@@ -89,7 +97,6 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
   if ($input->getOption('info')) {
     $command = $event->getCommand();
     $application = $command->getApplication();
-    // print_r($application->getDefinition());
     $info_command = $application->find('info');
     $output = $event->getOutput();
     $info_command->run($input, $output);

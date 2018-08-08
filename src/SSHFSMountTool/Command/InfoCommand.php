@@ -13,7 +13,7 @@ class InfoCommand extends Command {
   protected function configure() {
 
     $this->setName('info');
-    $this->setDescription('Show information about dependencies');
+    $this->setDescription('Display information about dependencies');
 
   }
 
