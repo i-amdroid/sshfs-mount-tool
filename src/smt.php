@@ -12,6 +12,7 @@ use SSHFSMountTool\Command\MountCommand;
 use SSHFSMountTool\Command\UnmountCommand;
 use SSHFSMountTool\Command\AddCommand;
 use SSHFSMountTool\Command\RemoveCommand;
+use SSHFSMountTool\Command\ListCommand;
 use SSHFSMountTool\Command\StatusCommand;
 use SSHFSMountTool\Command\HelpCommand;
 use Symfony\Component\Console\Application;
@@ -21,51 +22,27 @@ use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 // Registering commands
+$command_list = [
+  'SSHFSMountTool\Command\MountCommand',
+  'SSHFSMountTool\Command\UnmountCommand',
+  'SSHFSMountTool\Command\AddCommand',
+  'SSHFSMountTool\Command\RemoveCommand',
+  'SSHFSMountTool\Command\ListCommand',
+  'SSHFSMountTool\Command\StatusCommand',
+  'SSHFSMountTool\Command\HelpCommand',
+];
 $command_names = [];
 $command_aliases = [];
-$default_commands = [
-  'help',
-  'list',
-];
 $commands = [];
 
-// Mount command
-$mount_command = new MountCommand();
-$commands[] = $mount_command;
-$command_names[] = $mount_command->getname();
-$command_aliases = array_merge($mount_command->getAliases(), $command_aliases);
+foreach ($command_list as $key => $command_class) {
+  $command = new $command_class();
+  $commands[] = $command;
+  $command_names[] = $command->getname();
+  $command_aliases = array_merge($command->getAliases(), $command_aliases);
+}
 
-// Unmount command
-$unmount_command = new UnmountCommand();
-$commands[] = $unmount_command;
-$command_names[] = $unmount_command->getname();
-$command_aliases = array_merge($unmount_command->getAliases(), $command_aliases);
-
-// Add command
-$add_command = new AddCommand();
-$commands[] = $add_command;
-$command_names[] = $add_command->getname();
-$command_aliases = array_merge($add_command->getAliases(), $command_aliases);
-
-// Remove command
-$remove_command = new RemoveCommand();
-$commands[] = $remove_command;
-$command_names[] = $remove_command->getname();
-$command_aliases = array_merge($remove_command->getAliases(), $command_aliases);
-
-// Status command
-$status_command = new StatusCommand();
-$commands[] = $status_command;
-$command_names[] = $status_command->getname();
-$command_aliases = array_merge($status_command->getAliases(), $command_aliases);
-
-// Help command
-$help_command = new HelpCommand();
-$commands[] = $help_command;
-$command_names[] = $help_command->getname();
-$command_aliases = array_merge($help_command->getAliases(), $command_aliases);
-
-$aliases = array_merge($command_names, $command_aliases, $default_commands);
+$aliases = array_merge($command_names, $command_aliases);
 
 // Emulate $app->setDefaultCommand for handling arguments
 $first_arg_is_command = FALSE;
