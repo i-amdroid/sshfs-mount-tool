@@ -15,6 +15,7 @@ use SSHFSMountTool\Command\RemoveCommand;
 use SSHFSMountTool\Command\ListCommand;
 use SSHFSMountTool\Command\StatusCommand;
 use SSHFSMountTool\Command\ConfigCommand;
+use SSHFSMountTool\Command\InfoCommand;
 use SSHFSMountTool\Command\HelpCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
@@ -31,6 +32,7 @@ $command_list = [
   'SSHFSMountTool\Command\ListCommand',
   'SSHFSMountTool\Command\StatusCommand',
   'SSHFSMountTool\Command\ConfigCommand',
+  'SSHFSMountTool\Command\InfoCommand',
   'SSHFSMountTool\Command\HelpCommand',
 ];
 $command_names = [];
@@ -72,6 +74,10 @@ $app->getDefinition()->addOption(
 $dispatcher = new EventDispatcher();
 $app->setDispatcher($dispatcher);
 
+$app->getDefinition()->addOption(
+  new InputOption('info', 'i', InputOption::VALUE_NONE, 'Show information about dependencies')
+);
+
 $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $event) {
   global $preferences;
   // gets the input instance
@@ -79,6 +85,19 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
   if ($input->getOption('global')) {
     $preferences['global'] = TRUE;
   }
+
+  if ($input->getOption('info')) {
+    $command = $event->getCommand();
+    $application = $command->getApplication();
+    // print_r($application->getDefinition());
+    $info_command = $application->find('info');
+    $output = $event->getOutput();
+    $info_command->run($input, $output);
+    // return 0;
+    // @todo fing proper way to exit without running default command after
+    exit(0);
+  }
+
 });
 
 $app->addCommands($commands);
