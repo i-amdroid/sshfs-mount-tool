@@ -520,6 +520,26 @@ function validate_answer_as_connection($answer, $connections_data) {
   return $cid;
 }
 
+/**
+ * Determine providing of connection ID and return it.
+ * If connection ID not provided:
+ *  * if only one connection exist in config, it will be returned
+ * automatically;
+ *  * if multiple connections exists in config, user will prompted to choose
+ * one.
+ *
+ * @param $input
+ *  Input Interface.
+ *
+ * @param $output
+ *  Output Interface.
+ *
+ * @param $helper
+ *  Helper function.
+ *
+ * @return
+ *  Connection ID or 0 if connection was not resolved.
+ */
 function cid_resolver($input, $output, $helper) {
 
   if ($input->getArgument('connection_id')) {
@@ -548,7 +568,6 @@ function cid_resolver($input, $output, $helper) {
       $table = gen_connections_table($connections_data, $output);
       $table->render();
 
-      // $helper = $this->getHelper('question');
       $question = new Question('Number or ID of connection [<comment>cancel</comment>]: ');
       $question->setValidator(function ($answer) use ($connections_data) {
         if ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL') {
@@ -575,29 +594,4 @@ function cid_resolver($input, $output, $helper) {
     }
   }
   return $cid;
-}
-
-// !tbr
-/**
- * Execute a shell command.
- *
- * @param $cmd
- *  Shell command.
- *
- * @param $success_message
- *  Optional. Message for return if executing was successful.
- *
- * @return
- *  $success_message if executing was successful
- *  or last line of command output if executing failed.
- */
-function run_cmd($cmd, $success_message = 'Ok') {
-  $output = [];
-  $result_code = 0;
-  $run = exec($cmd, $output, $result_code);
-  if ($result_code == 0) {
-    return $success_message;
-  }
-  // return last line if something goes wrong
-  return $run;
 }

@@ -8,15 +8,6 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../includes/bootstrap.inc';
 
-use SSHFSMountTool\Command\MountCommand;
-use SSHFSMountTool\Command\UnmountCommand;
-use SSHFSMountTool\Command\AddCommand;
-use SSHFSMountTool\Command\RemoveCommand;
-use SSHFSMountTool\Command\ListCommand;
-use SSHFSMountTool\Command\StatusCommand;
-use SSHFSMountTool\Command\ConfigCommand;
-use SSHFSMountTool\Command\InfoCommand;
-use SSHFSMountTool\Command\HelpCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
@@ -34,6 +25,8 @@ $command_list = [
   'SSHFSMountTool\Command\ConfigCommand',
   'SSHFSMountTool\Command\InfoCommand',
   'SSHFSMountTool\Command\HelpCommand',
+  'SSHFSMountTool\Command\CdCommand',
+  'SSHFSMountTool\Command\SshCommand',
 ];
 $command_names = [];
 $command_aliases = [];
@@ -71,17 +64,21 @@ $app = new Application('SSHFS Mount Tool', get_version());
 $app->getDefinition()->addOption(
   new InputOption('global', 'g', InputOption::VALUE_NONE, 'Use global connections')
 );
+
+// Add info command as app option
+$app->getDefinition()->addOption(
+  new InputOption('info', 'i', InputOption::VALUE_NONE, 'Display information about dependencies')
+);
+
+// Handle global and info options
 $dispatcher = new EventDispatcher();
 $app->setDispatcher($dispatcher);
 
-$app->getDefinition()->addOption(
-  new InputOption('info', 'i', InputOption::VALUE_NONE, 'Show information about dependencies')
-);
-
 $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $event) {
+
   global $preferences;
-  // gets the input instance
   $input = $event->getInput();
+
   if ($input->getOption('global')) {
     $preferences['global'] = TRUE;
   }
@@ -89,19 +86,18 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
   if ($input->getOption('info')) {
     $command = $event->getCommand();
     $application = $command->getApplication();
-    // print_r($application->getDefinition());
     $info_command = $application->find('info');
     $output = $event->getOutput();
     $info_command->run($input, $output);
     // return 0;
-    // @todo fing proper way to exit without running default command after
+    // @todo find proper way to exit without running default command after
     exit(0);
   }
 
 });
 
 $app->addCommands($commands);
-// $app->setDefaultCommand($mount_command->getName());
+$app->setDefaultCommand('mount');
 
 $app->run();
 

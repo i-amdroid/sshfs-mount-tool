@@ -7,7 +7,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\Process;
 
 class MountCommand extends Command {
@@ -15,9 +14,9 @@ class MountCommand extends Command {
   protected function configure() {
 
     $this->setName('mount');
-    $this->setDescription('Mount connection');
-    $this->setHelp('Mount previously saved connection');
-    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the conntection');
+    $this->setDescription('<comment>Mount connection (default)</comment>');
+    $this->setHelp('Mount previously saved connection' . PHP_EOL . 'This is default command and can be used without specifying "mount".');
+    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
     $this->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Provide password');
 
   }
@@ -42,7 +41,6 @@ class MountCommand extends Command {
     }
 
     $cmd = gen_mount_cmd($cid, $password);
-    //$output->writeln($cmd);
     $connection_settings = get_connection_settings($cid);
 
     // check existing of mount point and create if needed

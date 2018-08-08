@@ -5,9 +5,7 @@ namespace SSHFSMountTool\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class ConfigCommand extends Command {
 
@@ -29,7 +27,7 @@ class ConfigCommand extends Command {
 
     // Command execution
     $process = new Process($cmd);
-    $process->setTty(true);
+    $process->setTty(TRUE);
     $process->run();
 
   }
