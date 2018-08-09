@@ -10,6 +10,12 @@ $preferences['default_options'] = [
   // 'defer_permissions',
   'StrictHostKeyChecking=no',
 ];
+$preferences['terminal'] = 'Terminal.app';
+
+$terminals['Terminal.app'] = [
+  'cmd_prefix' => 'osascript -e \'tell application "Terminal" to activate\' -e \'tell application "System Events" to tell process "Terminal" to keystroke "t" using command down\' -e \'tell application "Terminal" to do script "',
+  'cmd_suffix' => '" in selected tab of the front window\'',
+];
 
 /**
  * Return shell command for mount.
@@ -118,25 +124,4 @@ function get_mounts() {
     }
   }
   return $cids;
-}
-
-/**
- * Execute command in separate terminal.
- *
- * @param $cmd
- *  Command for execute.
- *
- * @param $new_tab
- *  Optional. Flag for using tab instead new window.
- *
- * @return
- *  Result of command execution.
- */
-function run_terminal_cmd($cmd, $new_tab = TRUE) {
-  if ($new_tab) {
-    return shell_exec('osascript -e \'tell application "Terminal" to activate\' -e \'tell application "System Events" to tell process "Terminal" to keystroke "t" using command down\' -e \'tell application "Terminal" to do script "' . $cmd . '" in selected tab of the front window\'');
-  }
-  else {
-    return shell_exec('osascript -e \'tell application "Terminal" to do script "' . $cmd . '"\'');
-  }
 }

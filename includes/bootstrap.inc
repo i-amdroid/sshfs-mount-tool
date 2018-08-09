@@ -595,3 +595,19 @@ function cid_resolver($input, $output, $helper) {
   }
   return $cid;
 }
+
+/**
+ * Return shell command for run in new tab of terminal.
+ *
+ * @param $cmd
+ *  Command for run.
+ *
+ * @return
+ *  Result of command execution.
+ */
+function gen_terminal_cmd($cmd) {
+  global $preferences;
+  global $terminals;
+  $terminal = $preferences['terminal'];
+  return $terminals[$terminal]['cmd_prefix'] . $cmd . $terminals[$terminal]['cmd_suffix'];
+}

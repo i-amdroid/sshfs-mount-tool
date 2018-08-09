@@ -16,7 +16,7 @@ Requirements
 Instalation
 -----------
 
-**Install SSHFS**
+### Install SSHFS
 
 Ubuntu:
 
@@ -26,7 +26,17 @@ macOS ([osxfuse.github.io](https://osxfuse.github.io/)):
 
     brew install sshfs
 
-**Install SSHFS Mount Tool**
+### Install SSHFS Mount Tool
+
+**Option 1: Install with Composer**
+
+    composer global require i-amdroid/sshfs-mount-tool
+
+Check that Composer bin directory (`~/.composer/vendor/bin/`) exist in your PATH (`~/.bash_profile` or `~/.bashrc` or `~/.zshrc`) and add it if not, like this:
+
+    export PATH=~/.composer/vendor/bin:$PATH
+
+**Option 2: Manual installation**
 
 Download latest phar from [Releases](https://github.com/i-amdroid/sshfs-mount-tool/releases).
 
@@ -137,7 +147,6 @@ SMT v2 completely rewriten with Symfony Console component and development still 
 * Create autocomplete suggestions
 * Create tests
 * Pretify info command
-* Install with Composer
 * Install with Homebrew
 
 **Build**

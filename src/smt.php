@@ -70,6 +70,8 @@ $app->getDefinition()->addOption(
   new InputOption('info', 'i', InputOption::VALUE_NONE, 'Display information about dependencies')
 );
 
+// @todo resolve situation with -h option
+
 // Handle global and info options
 $dispatcher = new EventDispatcher();
 $app->setDispatcher($dispatcher);

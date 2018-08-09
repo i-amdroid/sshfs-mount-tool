@@ -6,6 +6,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Process\Process;
 
 class SshCommand extends Command {
 
@@ -34,7 +35,17 @@ class SshCommand extends Command {
     }
     $cmd .= $connection_settings['server'];
 
-    run_terminal_cmd($cmd);
+    $terminal_cmd = gen_terminal_cmd($cmd);
+
+    // Command execution
+    $process = new Process($terminal_cmd);
+    $process->run();
+
+    // Normal massages
+    if (!$process->isSuccessful()) {
+      // throw new ProcessFailedException($process);
+      $output->writeln($process->getErrorOutput());
+    }
 
   }
 }
