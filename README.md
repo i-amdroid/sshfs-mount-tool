@@ -4,7 +4,7 @@ SSHFS Mount Tool
 SSHFS Mount Tool (SMT) — CLI tool for manage and mount SSH connections as file system volumes.  
 SMT is a wrapper around SSHFS but designed to work with minimal typing.
 
-<img src="https://github.com/i-amdroid/sshfs-mount-tool/blob/master/smt.gif" width="778">
+<img src="https://github.com/i-amdroid/sshfs-mount-tool/blob/2.x/smt.gif" width="778">
 
 Requirements
 ------------
@@ -56,6 +56,22 @@ Connection properties:
 | `options`  | List of SSHFS options |
 
 Connections can be stored in YAML file in `~/.config/smt/stm.yml` (global) or in `stm.yml` in current directory.
+
+Example of config file:
+
+~~~language-yaml
+connections:
+  msrv:
+    title: myserver
+    server: server.com
+    port: null
+    user: iam
+    password: null
+    key: ~/.ssh/id_rsa
+    mount: ~/mnt/msrv
+    remote: /var/www
+    options: {  }
+~~~
 
 **Mount connection**
 
@@ -112,17 +128,17 @@ Development
 
 SMT has written on PHP, any contributions welcome.
 
-SMT v1 is stable release but development still in progres. 
+SMT v2 completely rewriten with Symfony Console component and development still in progres. 
 
 **Future plans**
 
 * Config file for SMT preferences
 * More terminals support for `cd` and `ssh` commands 
 * Create autocomplete suggestions
-* Improve args handling
 * Create tests
-* Apply best practices for promts, output format, options naming
 * Pretify info command
+* Install with Composer
+* Install with Homebrew
 
 **Build**
 
@@ -131,6 +147,7 @@ SMT v1 is stable release but development still in progres.
   
   ~~~
   composer install
+  composer dump -o
   ~~~
 
 3. Run build process via [Box](https://box-project.github.io/box2/)
