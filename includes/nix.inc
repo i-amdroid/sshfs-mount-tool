@@ -10,6 +10,12 @@ $preferences['default_options'] = [
   // 'defer_permissions',
   'StrictHostKeyChecking=no',
 ];
+$preferences['terminal'] = 'gnome-terminal';
+
+$terminals['gnome-terminal'] = [
+  'cmd_prefix' => 'gnome-terminal --tab -- bash -c "',
+  'cmd_suffix' => '; exec bash"',
+];
 
 /**
  * Return shell command for mount.
@@ -118,25 +124,4 @@ function get_mounts() {
     }
   }
   return $cids;
-}
-
-/**
- * Execute command in separate terminal.
- *
- * @param $cmd
- *  Command for execute.
- *
- * @param $new_tab
- *  Optional. Flag for using tab instead new window.
- *
- * @return
- *  Result of command execution.
- */
-function run_terminal_cmd($cmd, $new_tab = TRUE) {
-  if ($new_tab) {
-    return shell_exec('gnome-terminal --tab -- bash -c "' . $cmd . '; exec bash"');
-  }
-  else {
-    return shell_exec('gnome-terminal -- bash -c "' . $cmd . '; exec bash"');
-  }
 }

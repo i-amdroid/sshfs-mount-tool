@@ -22,26 +22,32 @@ class StatusCommand extends Command {
 
   protected function execute(InputInterface $input, OutputInterface $output) {
 
-    // @todo add display status of one connection
-    /*
     if ($input->getArgument('connection_id')) {
       $cid = $input->getArgument('connection_id');
+      if (!match_cid($cid)) {
+        $output->writeln($cid . ' is not a valid connection ID');
+        return 2;
+      }
+
+      $mounts = get_mounts();
+      if (in_array($cid, $mounts)) {
+        $output->writeln($cid . ' is <info>mounted</info>');
+      }
+      else {
+        $output->writeln($cid . ' is not mounted');
+      }
     }
     else {
-      $cid = 'none';
+      $connections_data = get_connections_data();
+      // no saved connections
+      if (empty($connections_data)) {
+        $output->writeln('No saved connections');
+        // not an error
+        return 0;
+      }
+      $table = gen_connections_table($connections_data, $output);
+      $table->render();
     }
-    */
-
-    $connections_data = get_connections_data();
-    // no saved connections
-    if (empty($connections_data)) {
-      $output->writeln('No saved connections');
-      // not an error
-      return 0;
-    }
-    $table = gen_connections_table($connections_data, $output);
-
-    $table->render();
 
   }
 }
