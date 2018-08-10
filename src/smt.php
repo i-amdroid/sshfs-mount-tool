@@ -5,7 +5,19 @@
  * Provides main functionality.
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
+// Include composer dependencies
+// Manual installation
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+  require_once __DIR__ . '/../vendor/autoload.php';
+}
+// Installation with composer
+elseif (file_exists(__DIR__ . '/../../../autoload.php')) {
+  require_once __DIR__ . '/../../../autoload.php';
+}
+else {
+  echo 'You must set up the project dependencies using "composer install"' . PHP_EOL;
+}
+// Include base project config and functions
 require __DIR__ . '/../includes/bootstrap.inc';
 
 use Symfony\Component\Console\Application;
