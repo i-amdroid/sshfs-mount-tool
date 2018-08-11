@@ -500,8 +500,7 @@ function validate_answer_as_connection($answer, $connections_data) {
   $cid = NULL;
 
   // Answer looks like a number
-  if (is_numeric($answer)) {
-    $answer = intval($answer);
+  if (filter_var($answer, FILTER_VALIDATE_INT)) {
     foreach ($connections_data as $connection => $connection_data) {
       if ($answer == $connection_data['n']) {
         $cid = $connection_data['cid'];

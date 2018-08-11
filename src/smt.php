@@ -25,6 +25,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Console\Input\ArrayInput;
 
 // Registering commands
 $command_list = [
@@ -82,9 +83,7 @@ $app->getDefinition()->addOption(
   new InputOption('info', 'i', InputOption::VALUE_NONE, 'Display information about dependencies')
 );
 
-// @todo resolve situation with -h option
-
-// Handle global and info options
+// Handle global, info and help options
 $dispatcher = new EventDispatcher();
 $app->setDispatcher($dispatcher);
 
@@ -102,10 +101,32 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
     $application = $command->getApplication();
     $info_command = $application->find('info');
     $output = $event->getOutput();
-    $info_command->run($input, $output);
-    // return 0;
+
+    $exitCode = $info_command->run($input, $output);
+    exit($exitCode);
+
     // @todo find proper way to exit without running default command after
-    exit(0);
+    // return 0;
+
+  }
+
+  // Seems like something brokes after overriding help command
+  // and command like "smt mount -h" don't work anymore, so handle it manually. 
+  // Not sure that this is the best way, but it works now.
+  if ($input->getOption('help')) {
+    $command = $event->getCommand();
+    $application = $command->getApplication();
+    $help_command = $application->find('help');
+    // $input->setArgument('command_name', $input->getArgument('command'));
+    $new_input = new ArrayInput(array('command_name' => $input->getArgument('command')));
+    $output = $event->getOutput();
+
+    $exitCode = $help_command->run($new_input, $output);
+    exit($exitCode);
+
+    // @todo find proper way to exit without running default command after
+    // return 0;
+
   }
 
 });
