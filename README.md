@@ -156,7 +156,6 @@ SMT v2 completely rewriten with Symfony Console component and development still 
   
   ~~~
   composer install
-  composer dump -o
   ~~~
 
 3. Run build process via [Box](https://box-project.github.io/box2/)

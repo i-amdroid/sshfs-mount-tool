@@ -7,7 +7,7 @@
     "manager",
     "CLI"
   ],
-  "version": "2.0.2",
+  "version": "2.0.3",
   "type": "project",
   "homepage": "https://github.com/i-amdroid/sshfs-mount-tool",
   "license": "CC0-1.0",

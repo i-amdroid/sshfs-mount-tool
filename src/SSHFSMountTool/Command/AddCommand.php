@@ -35,7 +35,15 @@ class AddCommand extends Command {
     // Port
     $prompt_port = ($output->isVerbose()) ? 'Port. 22 is a default port, don\'t need to specify it []: ' : 'Port []: ';
     $port = new Question($prompt_port);
-    // @todo add validator
+    $port->setValidator(function ($answer) {
+      if ($answer == '') {
+        return;
+      }
+      if (filter_var($answer, FILTER_VALIDATE_INT, array('options' => array('min_range' => 0, 'max_range' => 65535))) === false) {
+        throw new \Exception('Invalid port value');
+      }
+      return $answer;
+    });
     $connection_settings['port'] = $helper->ask($input, $output, $port);
 
     // User
