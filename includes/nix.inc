@@ -2,7 +2,8 @@
 
 $preferences['unmount_cmd'] = 'fusermount -u';
 $preferences['mounts_list_type'] = 'fuse.sshfs';
-$preferences['editor'] = 'editor';
+// $preferences['editor'] = 'editor';
+$preferences['editor'] = '$EDITOR';
 $preferences['terminal'] = 'gnome-terminal';
 
 $terminals['gnome-terminal'] = [
