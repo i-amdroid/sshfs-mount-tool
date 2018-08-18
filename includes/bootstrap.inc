@@ -9,25 +9,45 @@ use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Question\Question;
 
-$preferences['home_path'] = $_SERVER['HOME'];
-$preferences['current_path'] = exec('pwd');
-$preferences['mount_path'] = '~/mnt';
+$default_preferences = [];
+$env_preferences = [];
+$user_preferences = [];
 
-$preferences['user_config_file'] = $preferences['home_path'] . '/.config/smt/smt.yml';
-$preferences['current_config_file'] = $preferences['current_path'] . '/smt.yml';
-$preferences['project_info_file'] = __DIR__ . '/../composer.json';
+$default_terminals = [];
+$user_terminals = [];
 
-$preferences['mount_cmd'] = 'sshfs';
-$preferences['mounts_list_cmd'] = 'mount';
-$preferences['default_options'] = [
+$env_preferences['home_path'] = $_SERVER['HOME'];
+$env_preferences['current_path'] = exec('pwd');
+$default_preferences['mount_path'] = '~/mnt';
+
+$env_preferences['user_config_file'] = $env_preferences['home_path'] . '/.config/smt/smt.yml';
+$env_preferences['current_config_file'] = $env_preferences['current_path'] . '/smt.yml';
+$env_preferences['user_preferences_file'] = $env_preferences['home_path'] . '/.config/smt/config.yml';
+$env_preferences['project_info_file'] = __DIR__ . '/../composer.json';
+
+$default_preferences['mount_cmd'] = 'sshfs';
+$default_preferences['mounts_list_cmd'] = 'mount';
+$default_preferences['default_options'] = [
   'follow_symlinks',
   'StrictHostKeyChecking=no',
 ];
 
-$preferences['os_functions_inc'] = init();
-require $preferences['os_functions_inc'];
+$env_preferences['os_functions_inc'] = init();
+require $env_preferences['os_functions_inc'];
 
-$preferences['global'] = FALSE;
+$default_preferences['global'] = FALSE;
+
+if (!file_exists($env_preferences['user_preferences_file'])){
+  gen_preferences_file($env_preferences['user_preferences_file']);
+}
+else {
+  $user_preferences = get_user_preferences($env_preferences['user_preferences_file'], 'preferences');
+  $user_terminals = get_user_preferences($env_preferences['user_preferences_file'], 'terminals');
+}
+
+// very simple merging, user preferences just overrides default
+$preferences = array_merge($default_preferences, $user_preferences, $env_preferences);
+$terminals = array_merge($default_terminals, $user_terminals);
 
 /**
  * Determine OS and return corresponding inc file.
@@ -49,6 +69,38 @@ function init() {
       break;
   }
   return;
+}
+
+function get_user_preferences($preferences_file, $section) {
+  $config = get_config($preferences_file);
+  if (isset($config[$section])) {
+    return $config[$section];
+  }
+  else {
+    return [];
+  }
+}
+
+function gen_preferences_file($preferences_file) {
+  global $default_preferences;
+  global $default_terminals;
+  $config['default_preferences'] = $default_preferences;
+  $config['default_terminals'] = $default_terminals;
+  set_config($config, $preferences_file);
+
+  $lines = file($preferences_file); 
+  $new_lines = '';
+
+  if (is_array($lines)) {
+    foreach($lines as $line) { 
+      $new_lines .= '# ' . $line;
+    } 
+  }
+  $new_lines .= "\n";
+  $new_lines .= "preferences:\n";
+  $new_lines .= "\n";
+  $new_lines .= "terminals:\n";
+  file_put_contents($preferences_file, $new_lines);
 }
 
 /**
