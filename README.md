@@ -5,7 +5,7 @@ SSHFS Mount Tool (SMT) — CLI tool for manage and mount SSH connections as file
 SMT is a wrapper around SSHFS but designed to work with minimal typing.
 
 <p align="center">
-  <img src="https://cdn.rawgit.com/i-amdroid/sshfs-mount-tool/2.x/smt.svg" width="792">
+  <img src="https://cdn.rawgit.com/i-amdroid/sshfs-mount-tool/2.x/smt.svg?v=2.1.0" width="792">
 </p>
 
 Requirements
