@@ -37,12 +37,12 @@ require $env_preferences['os_functions_inc'];
 
 $default_preferences['global'] = FALSE;
 
-if (!file_exists($env_preferences['user_preferences_file'])){
-  gen_preferences_file($env_preferences['user_preferences_file']);
+if (!file_exists($env_preferences['user_preferences_file'])) {
+  gen_user_config_file($env_preferences['user_preferences_file']);
 }
 else {
-  $user_preferences = get_user_preferences($env_preferences['user_preferences_file'], 'preferences');
-  $user_terminals = get_user_preferences($env_preferences['user_preferences_file'], 'terminals');
+  $user_preferences = get_settings('preferences', $env_preferences['user_preferences_file']);
+  $user_terminals = get_settings('terminals', $env_preferences['user_preferences_file']);
 }
 
 // very simple merging, user preferences just overrides default
@@ -69,38 +69,6 @@ function init() {
       break;
   }
   return;
-}
-
-function get_user_preferences($preferences_file, $section) {
-  $config = get_config($preferences_file);
-  if (isset($config[$section])) {
-    return $config[$section];
-  }
-  else {
-    return [];
-  }
-}
-
-function gen_preferences_file($preferences_file) {
-  global $default_preferences;
-  global $default_terminals;
-  $config['default_preferences'] = $default_preferences;
-  $config['default_terminals'] = $default_terminals;
-  set_config($config, $preferences_file);
-
-  $lines = file($preferences_file); 
-  $new_lines = '';
-
-  if (is_array($lines)) {
-    foreach($lines as $line) { 
-      $new_lines .= '# ' . $line;
-    } 
-  }
-  $new_lines .= "\n";
-  $new_lines .= "preferences:\n";
-  $new_lines .= "\n";
-  $new_lines .= "terminals:\n";
-  file_put_contents($preferences_file, $new_lines);
 }
 
 /**
@@ -141,6 +109,41 @@ function get_config_file() {
 }
 
 /**
+ * Generate bare user config file.
+ *
+ * @param $config_file
+ *  Path to config file (in YAML format).
+ *
+ * @return
+ *  Result of file saving (FALSE if unsuccessfully).
+ */
+function gen_user_config_file($config_file) {
+  global $default_preferences;
+  global $default_terminals;
+
+  $config['default_preferences'] = $default_preferences;
+  $config['default_terminals'] = $default_terminals;
+
+  // writing default values to file
+  set_config($config, $config_file);
+
+  // comment default values and write section titles
+  $lines = file($config_file);
+  $new_lines = '';
+  if (is_array($lines)) {
+    foreach ($lines as $line) {
+      $new_lines .= '# ' . $line;
+    }
+  }
+  $new_lines .= "\n";
+  $new_lines .= "preferences:\n";
+  $new_lines .= "\n";
+  $new_lines .= "terminals:\n";
+
+  return file_put_contents($config_file, $new_lines);
+}
+
+/**
  * Parse config file and return config array
  *
  * @param $config_file
@@ -158,6 +161,31 @@ function get_config($config_file = FALSE) {
   }
   if (file_exists($config_file)) {
     return Yaml::parseFile($config_file);
+  }
+  else {
+    return [];
+  }
+}
+
+/**
+ * Return settings of corresponding section from configuration.
+ *
+ * @param $section
+ *  Settings section. Defined sections:
+ *   'connections',
+ *   'preferences',
+ *   'terminals'.
+ *
+ * @param $config_file
+ *  Optional. Path to config file (in YAML format).
+ *
+ * @return
+ *  Array of settings or empty array.
+ */
+function get_settings($section, $config_file = FALSE) {
+  $config = get_config($config_file);
+  if (isset($config[$section])) {
+    return $config[$section];
   }
   else {
     return [];
@@ -196,22 +224,6 @@ function set_config($config, $config_file) {
   else {
     echo 'Error saving configuration.' . PHP_EOL;
     exit(1);
-  }
-}
-
-/**
- * Return all connections from configuration.
- *
- * @return
- *  Array of connections or empty array.
- */
-function get_connections() {
-  $config = get_config();
-  if (isset($config['connections'])) {
-    return $config['connections'];
-  }
-  else {
-    return [];
   }
 }
 
@@ -349,7 +361,7 @@ function remove_connection_settings($cid) {
  *  Array of connection data.
  */
 function get_connections_data($mounted_only = FALSE) {
-  $connections = get_connections();
+  $connections = get_settings('connections');
   $mounts = get_mounts();
   $connections_data = [];
   $i = 1;
@@ -495,7 +507,7 @@ function gen_connection_settings_table($cid, $connection_settings, $output) {
  */
 function get_cid($mount_point) {
   global $preferences;
-  $connections = get_connections();
+  $connections = get_settings('connections');
   foreach ($connections as $cid => $connection_settings) {
     if ($mount_point == $connection_settings['mount']) {
       return $cid;
@@ -525,7 +537,7 @@ function get_cid($mount_point) {
  */
 function match_cid($input, $connections_data = FALSE) {
   if (!$connections_data) {
-    $connections = get_connections();
+    $connections = get_settings('connections');
     foreach ($connections as $cid => $connection_settings) {
       if ($input == $cid) {
         return $input;

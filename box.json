@@ -1,7 +1,21 @@
 {
   "chmod": "0755",
   "files": ["composer.json", "README.md"],
-  "directories": ["src", "includes", "vendor"],
+  "directories": ["src", "includes"],
+  "finder": [
+    {
+      "in": "vendor",
+      "notName": "/LICENSE|.*\\.md|.*\\.dist|Makefile|composer\\.json|composer\\.lock/",
+      "exclude": [
+        "phpunit",
+        "phpunit-test-case",
+        "Tester",
+        "Tests",
+        "tests",
+        "test-suite"
+      ]
+    }
+  ],
   "main": "bin/smt",
   "output": "smt.phar",
   "stub": true
