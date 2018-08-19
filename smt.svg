@@ -3,21 +3,18 @@
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
             <termtosvg:screen_geometry columns="96" rows="24"/>
         </termtosvg:template_settings>
-        <style type="text/css" id="generated-style"><![CDATA[:root {
-            --animation-duration: 16770ms;
-        }
-        
-        #screen {
+        <style type="text/css" id="user-style">
+            :root {
+                --animation-duration: 16770ms;
+            }
+            #screen {
                 font-family: 'Roboto Mono', RobotoMono-Regular, monospace;
                 font-style: normal;
                 font-size: 13px;
             }
-
-        text {
-            dominant-baseline: text-before-edge;
-        }]]></style>
-        <style type="text/css" id="user-style">
-            /* gjm8 color theme (source: https://terminal.sexy/) */
+            text {
+                dominant-baseline: text-before-edge;
+            }
             .foreground {fill: #f8f8f2}
             .background {fill: #111111}
             .color0 {fill: #272822}
