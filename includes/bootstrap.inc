@@ -9,25 +9,45 @@ use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Question\Question;
 
-$preferences['home_path'] = $_SERVER['HOME'];
-$preferences['current_path'] = exec('pwd');
-$preferences['mount_path'] = '~/mnt';
+$default_preferences = [];
+$env_preferences = [];
+$user_preferences = [];
 
-$preferences['user_config_file'] = $preferences['home_path'] . '/.config/smt/smt.yml';
-$preferences['current_config_file'] = $preferences['current_path'] . '/smt.yml';
-$preferences['project_info_file'] = __DIR__ . '/../composer.json';
+$default_terminals = [];
+$user_terminals = [];
 
-$preferences['mount_cmd'] = 'sshfs';
-$preferences['mounts_list_cmd'] = 'mount';
-$preferences['default_options'] = [
+$env_preferences['home_path'] = $_SERVER['HOME'];
+$env_preferences['current_path'] = exec('pwd');
+$default_preferences['mount_path'] = '~/mnt';
+
+$env_preferences['user_config_file'] = $env_preferences['home_path'] . '/.config/smt/smt.yml';
+$env_preferences['current_config_file'] = $env_preferences['current_path'] . '/smt.yml';
+$env_preferences['user_preferences_file'] = $env_preferences['home_path'] . '/.config/smt/config.yml';
+$env_preferences['project_info_file'] = __DIR__ . '/../composer.json';
+
+$default_preferences['mount_cmd'] = 'sshfs';
+$default_preferences['mounts_list_cmd'] = 'mount';
+$default_preferences['default_options'] = [
   'follow_symlinks',
   'StrictHostKeyChecking=no',
 ];
 
-$preferences['os_functions_inc'] = init();
-require $preferences['os_functions_inc'];
+$env_preferences['os_functions_inc'] = init();
+require $env_preferences['os_functions_inc'];
 
-$preferences['global'] = FALSE;
+$default_preferences['global'] = FALSE;
+
+if (!file_exists($env_preferences['user_preferences_file'])) {
+  gen_user_config_file($env_preferences['user_preferences_file']);
+}
+else {
+  $user_preferences = get_settings('preferences', $env_preferences['user_preferences_file']);
+  $user_terminals = get_settings('terminals', $env_preferences['user_preferences_file']);
+}
+
+// very simple merging, user preferences just overrides default
+$preferences = array_merge($default_preferences, $user_preferences, $env_preferences);
+$terminals = array_merge($default_terminals, $user_terminals);
 
 /**
  * Determine OS and return corresponding inc file.
@@ -89,6 +109,41 @@ function get_config_file() {
 }
 
 /**
+ * Generate bare user config file.
+ *
+ * @param $config_file
+ *  Path to config file (in YAML format).
+ *
+ * @return
+ *  Result of file saving (FALSE if unsuccessfully).
+ */
+function gen_user_config_file($config_file) {
+  global $default_preferences;
+  global $default_terminals;
+
+  $config['default_preferences'] = $default_preferences;
+  $config['default_terminals'] = $default_terminals;
+
+  // writing default values to file
+  set_config($config, $config_file);
+
+  // comment default values and write section titles
+  $lines = file($config_file);
+  $new_lines = '';
+  if (is_array($lines)) {
+    foreach ($lines as $line) {
+      $new_lines .= '# ' . $line;
+    }
+  }
+  $new_lines .= "\n";
+  $new_lines .= "preferences:\n";
+  $new_lines .= "\n";
+  $new_lines .= "terminals:\n";
+
+  return file_put_contents($config_file, $new_lines);
+}
+
+/**
  * Parse config file and return config array
  *
  * @param $config_file
@@ -106,6 +161,31 @@ function get_config($config_file = FALSE) {
   }
   if (file_exists($config_file)) {
     return Yaml::parseFile($config_file);
+  }
+  else {
+    return [];
+  }
+}
+
+/**
+ * Return settings of corresponding section from configuration.
+ *
+ * @param $section
+ *  Settings section. Defined sections:
+ *   'connections',
+ *   'preferences',
+ *   'terminals'.
+ *
+ * @param $config_file
+ *  Optional. Path to config file (in YAML format).
+ *
+ * @return
+ *  Array of settings or empty array.
+ */
+function get_settings($section, $config_file = FALSE) {
+  $config = get_config($config_file);
+  if (isset($config[$section])) {
+    return $config[$section];
   }
   else {
     return [];
@@ -144,22 +224,6 @@ function set_config($config, $config_file) {
   else {
     echo 'Error saving configuration.' . PHP_EOL;
     exit(1);
-  }
-}
-
-/**
- * Return all connections from configuration.
- *
- * @return
- *  Array of connections or empty array.
- */
-function get_connections() {
-  $config = get_config();
-  if (isset($config['connections'])) {
-    return $config['connections'];
-  }
-  else {
-    return [];
   }
 }
 
@@ -297,7 +361,7 @@ function remove_connection_settings($cid) {
  *  Array of connection data.
  */
 function get_connections_data($mounted_only = FALSE) {
-  $connections = get_connections();
+  $connections = get_settings('connections');
   $mounts = get_mounts();
   $connections_data = [];
   $i = 1;
@@ -443,7 +507,7 @@ function gen_connection_settings_table($cid, $connection_settings, $output) {
  */
 function get_cid($mount_point) {
   global $preferences;
-  $connections = get_connections();
+  $connections = get_settings('connections');
   foreach ($connections as $cid => $connection_settings) {
     if ($mount_point == $connection_settings['mount']) {
       return $cid;
@@ -473,7 +537,7 @@ function get_cid($mount_point) {
  */
 function match_cid($input, $connections_data = FALSE) {
   if (!$connections_data) {
-    $connections = get_connections();
+    $connections = get_settings('connections');
     foreach ($connections as $cid => $connection_settings) {
       if ($input == $cid) {
         return $input;

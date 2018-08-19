@@ -34,9 +34,17 @@ macOS ([osxfuse.github.io](https://osxfuse.github.io/)):
 
     composer global require i-amdroid/sshfs-mount-tool
 
-Check that Composer bin directory (`~/.composer/vendor/bin/`) exist in your PATH (`~/.bash_profile` or `~/.bashrc` or `~/.zshrc`) and add it if not, like this:
+Check that Composer bin directory exists in your PATH.
+Depending on your OS, Composer bin directory can be `$HOME/.composer/vendor/bin` or `$HOME/.config/composer/vendor/bin` ([read more](https://getcomposer.org/doc/03-cli.md#composer-home)).
+Depending on your shell, it can be set in `~/.bash_profile`, `~/.bashrc`, `~/.zshrc` etc.
 
-    export PATH=~/.composer/vendor/bin:$PATH
+If Composer bin directory does not exist in PATH, add it like this:
+
+    export PATH="$PATH:$HOME/.composer/vendor/bin"
+
+or
+
+    export PATH="$PATH:$HOME/.config/composer/vendor/bin"
 
 **Option 2: Manual installation**
 
@@ -132,8 +140,9 @@ Config file `stm.yml` in current directory useful for storing per project connec
 `smt` — Mount connection  
 `smt um` — Unmount connection  
 
-If SMT run from folder which contain `stm.yml` file, this file will be used as config file. In other case global config file will be used.  
-For using global config file from folder which contain `stm.yml` file, use global option (`-g, --global`). 
+If SMT run from folder which contain `stm.yml` file, this file will be used as config file. In other case global config file will be used. For using global config file from folder which contain `stm.yml` file, use global option (`-g, --global`).
+
+Since v2.1, SMT supports user preferences in `~/.config/smt/config.yml` file. Preferences allow to customize SSHFS commands, default options, add new terminals, choose editor, default mount folder, default global option state.
 
 Development
 -----------
@@ -144,8 +153,7 @@ SMT v2 completely rewriten with Symfony Console component and development still 
 
 **Future plans**
 
-* Config file for SMT preferences
-* More terminals support for `cd` and `ssh` commands 
+* More terminals support for `cd` and `ssh` commands (currently can be added in preferences)
 * Create autocomplete suggestions
 * Create tests
 * Pretify info command

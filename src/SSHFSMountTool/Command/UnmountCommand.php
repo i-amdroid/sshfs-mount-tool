@@ -19,7 +19,7 @@ class UnmountCommand extends Command {
     $this->setAliases([
       'um',
     ]);
-    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the conntection');
+    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
 
   }
 
@@ -45,7 +45,7 @@ class UnmountCommand extends Command {
         return 0;
       }
       // one mounted connection and only one connection in config file
-      elseif (count($connections_data) == 1 && count(get_connections()) == 1) {
+      elseif (count($connections_data) == 1 && count(get_settings('connections')) == 1) {
         $cid = $connections_data[0]['cid'];
       }
       // multiple mounted connections or multiple connections in config file
