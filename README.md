@@ -135,7 +135,7 @@ Launching SSH sessions with password authentification require `sshpass`.
 
 Installing on Ubuntu:
 
-    sudo apt install sshfs
+    sudo apt install sshpass
 
 Installing on macOS:
 
