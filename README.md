@@ -124,12 +124,22 @@ or:
 `smt -V` — Show version  
 `smt -i` — Show information about dependencies  
 
-Limited support commands:
+**Limited support commands**
 
 `smt cd [<connection id>]` — Change directory to connection mount directory  
 `smt ssh [<connection id>]` — Launch SSH session  
 
 Currently supported only in default Ubuntu terminal (gnome-terminal) and default macOS terminal (Terminal.app).
+
+Launching SSH sessions with password authentification require `sshpass`.
+
+Installing on Ubuntu:
+
+    sudo apt install sshfs
+
+Installing on macOS:
+
+    brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/master/Library/Formula/sshpass.rb
 
 **Config files**
 

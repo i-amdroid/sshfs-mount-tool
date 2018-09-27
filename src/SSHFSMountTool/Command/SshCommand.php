@@ -6,6 +6,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Process\Process;
 
 class SshCommand extends Command {
@@ -15,6 +16,7 @@ class SshCommand extends Command {
     $this->setName('ssh');
     $this->setDescription('Launch SSH session');
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
+    $this->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Provide password');
 
   }
 
@@ -28,12 +30,35 @@ class SshCommand extends Command {
       return 0;
     }
 
+    if ($input->getOption('password')) {
+      $password = $input->getOption('password');
+    }
+    else {
+      $password = FALSE;
+    }
+
     $connection_settings = get_connection_settings($cid);
-    $cmd = 'ssh ';
+    $cmd = '';
+
+    // override password
+    if ($password) {
+      $connection_settings['password'] = $password;
+    }
+
+    // password auth
+    if ($connection_settings['password']) {
+      $cmd .= 'sshpass -p ' . $connection_settings['password'] . ' ';
+    }
+
+    $cmd .= 'ssh ';
     if (isset($connection_settings['user'])) {
       $cmd .= $connection_settings['user'] . '@';
     }
     $cmd .= $connection_settings['server'];
+
+    if ($connection_settings['port']) {
+      $cmd .= ' -p ' . $connection_settings['port'];
+    };
 
     $terminal_cmd = gen_terminal_cmd($cmd);
 
