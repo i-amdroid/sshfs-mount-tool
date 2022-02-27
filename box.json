@@ -7,16 +7,17 @@
       "in": "vendor",
       "notName": "/LICENSE|.*\\.md|.*\\.dist|Makefile|composer\\.json|composer\\.lock/",
       "exclude": [
-        "phpunit",
-        "phpunit-test-case",
-        "Tester",
-        "Tests",
-        "tests",
-        "test-suite"
+          "doc",
+          "test",
+          "test_old",
+          "tests",
+          "Tests",
+          "vendor-bin"
       ]
     }
   ],
   "main": "bin/smt",
   "output": "smt.phar",
-  "stub": true
+  "stub": true,
+  "exclude-composer-files": false
 }

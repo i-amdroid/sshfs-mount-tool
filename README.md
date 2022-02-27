@@ -129,7 +129,7 @@ or:
 `smt cd [<connection id>]` — Change directory to connection mount directory  
 `smt ssh [<connection id>]` — Launch SSH session  
 
-Currently supported only in default Ubuntu terminal (gnome-terminal) and default macOS terminal (Terminal.app).
+Currently supported only in default Ubuntu terminal (gnome-terminal), default macOS terminal (Terminal.app) and iTerm.
 
 Launching SSH sessions with password authentification require `sshpass`.
 
@@ -157,15 +157,18 @@ Since v2.1, SMT supports user preferences in `~/.config/smt/config.yml` file. Pr
 Development
 -----------
 
-SMT has written on PHP, any contributions welcome.
+SMT initially has been written on pure PHP.
 
-SMT v2 completely rewriten with Symfony Console component and development still in progres. 
+V2 has been completely rewriten with Symfony Console component.
+
+V3 has been upgraded to use modern versions of PHP, Symfony, and other dependencies.
+
+Any contributions welcome
 
 **Future plans**
 
-* More terminals support for `cd` and `ssh` commands (currently can be added in preferences)
-* Create autocomplete suggestions
-* Create tests
+* Add autocomplete suggestions
+* Add tests
 * Pretify info command
 * Install with Homebrew
 
@@ -178,9 +181,9 @@ SMT v2 completely rewriten with Symfony Console component and development still 
   composer install
   ~~~
 
-3. Run build process via [Box](https://box-project.github.io/box2/)
+3. Run build process via [Box](https://github.com/box-project/box)
 
   ~~~
-  box build -v
+  box compile
   ~~~
 
