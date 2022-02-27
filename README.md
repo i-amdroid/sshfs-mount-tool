@@ -163,7 +163,7 @@ V2 has been completely rewriten with Symfony Console component.
 
 V3 has been upgraded to use modern versions of PHP, Symfony, and other dependencies.
 
-Any contributions welcome
+Any contributions are welcome.
 
 **Future plans**
 
