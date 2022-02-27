@@ -30,7 +30,7 @@ class MountCommand extends Command {
 
     if (!$cid) {
       // canceled
-      return 0;
+      return Command::SUCCESS;
     }
 
     if ($input->getOption('password')) {
@@ -61,7 +61,7 @@ class MountCommand extends Command {
     }
 
     // Command execution
-    $process = new Process($cmd);
+    $process = Process::fromShellCommandline($cmd);
     $process->run();
 
     // Normal massages
@@ -78,6 +78,8 @@ class MountCommand extends Command {
         $output->writeln($success_message);
       }
     }
+
+    return Command::SUCCESS;
 
   }
 }

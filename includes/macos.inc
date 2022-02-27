@@ -1,7 +1,7 @@
 <?php
 
 $default_preferences['unmount_cmd'] = 'umount';
-$default_preferences['mounts_list_type'] = 'osxfuse';
+$default_preferences['mounts_list_type'] = 'macfuse';
 $default_preferences['editor'] = '$EDITOR';
 $default_preferences['terminal'] = 'Terminal.app';
 

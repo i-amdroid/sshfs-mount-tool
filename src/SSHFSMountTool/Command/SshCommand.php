@@ -27,7 +27,7 @@ class SshCommand extends Command {
 
     if (!$cid) {
       // canceled
-      return 0;
+      return Command::SUCCESS;
     }
 
     if ($input->getOption('password')) {
@@ -63,7 +63,7 @@ class SshCommand extends Command {
     $terminal_cmd = gen_terminal_cmd($cmd);
 
     // Command execution
-    $process = new Process($terminal_cmd);
+    $process = Process::fromShellCommandline($terminal_cmd);
     $process->run();
 
     // Normal massages
@@ -71,6 +71,8 @@ class SshCommand extends Command {
       // throw new ProcessFailedException($process);
       $output->writeln($process->getErrorOutput());
     }
+
+    return Command::SUCCESS;
 
   }
 }

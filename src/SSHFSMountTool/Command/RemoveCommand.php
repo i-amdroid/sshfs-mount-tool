@@ -28,13 +28,15 @@ class RemoveCommand extends Command {
 
     if (!$cid) {
       // canceled
-      return 0;
+      return Command::SUCCESS;
     }
 
     remove_connection_settings($cid);
 
     // here can be only success removing
     $output->writeln('<info>Connection removed</info>');
+
+    return Command::SUCCESS;
 
   }
 }

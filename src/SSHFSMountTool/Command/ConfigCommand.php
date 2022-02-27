@@ -33,12 +33,14 @@ class ConfigCommand extends Command {
       $config_file = get_config_file();
     }
 
-    $cmd = $preferences['editor'] . ' ' . $config_file;
+    $cmd = [$preferences['editor'], $config_file];
 
     // Command execution
     $process = new Process($cmd);
     $process->setTty(TRUE);
     $process->run();
+
+    return Command::SUCCESS;
 
   }
 }

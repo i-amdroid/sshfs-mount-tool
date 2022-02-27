@@ -71,6 +71,8 @@ EOF
       $this->command = NULL;
     }
 
+    return Command::SUCCESS;
+    
   }
 
 }

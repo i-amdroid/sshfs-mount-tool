@@ -26,7 +26,7 @@ class StatusCommand extends Command {
       $cid = $input->getArgument('connection_id');
       if (!match_cid($cid)) {
         $output->writeln($cid . ' is not a valid connection ID');
-        return 2;
+        return Command::INVALID;
       }
 
       $mounts = get_mounts();
@@ -43,11 +43,13 @@ class StatusCommand extends Command {
       if (empty($connections_data)) {
         $output->writeln('No saved connections');
         // not an error
-        return 0;
+        return Command::SUCCESS;
       }
       $table = gen_connections_table($connections_data, $output);
       $table->render();
     }
+
+    return Command::SUCCESS;
 
   }
 }

@@ -28,13 +28,15 @@ class ListCommand extends Command {
 
     if (!$cid) {
       // canceled
-      return 0;
+      return Command::SUCCESS;
     }
 
     $connection_settings = get_connection_settings($cid);
 
     $table = gen_connection_settings_table($cid, $connection_settings, $output);
     $table->render();
+
+    return Command::SUCCESS;
 
   }
 }

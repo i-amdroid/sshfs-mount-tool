@@ -26,7 +26,7 @@ class CdCommand extends Command {
 
     if (!$cid) {
       // canceled
-      return 0;
+      return Command::SUCCESS;
     }
 
     $connection_settings = get_connection_settings($cid);
@@ -42,7 +42,7 @@ class CdCommand extends Command {
       $terminal_cmd = gen_terminal_cmd($cmd);
 
       // Command execution
-      $process = new Process($terminal_cmd);
+      $process = Process::fromShellCommandline($terminal_cmd);
       $process->run();
 
       // Normal massages
@@ -54,6 +54,8 @@ class CdCommand extends Command {
     else {
       $output->writeln('No mount point for ' . $cid . ' set');
     }
+
+    return Command::SUCCESS;
 
   }
 }

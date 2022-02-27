@@ -434,7 +434,7 @@ function gen_connections_table($connections_data, $output) {
   $tableStyle = $table->getStyle();
   $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
   $tableStyle->setCellRowContentFormat('%s  ');
-  $tableStyle->setVerticalBorderChar('');
+  $tableStyle->setVerticalBorderChars('');
 
   return $table;
 }
@@ -491,7 +491,7 @@ function gen_connection_settings_table($cid, $connection_settings, $output) {
   $tableStyle = $table->getStyle();
   $tableStyle->setCellHeaderFormat('<fg=cyan;options=bold>%s</>');
   $tableStyle->setCellRowContentFormat('%s    ');
-  $tableStyle->setVerticalBorderChar('');
+  $tableStyle->setVerticalBorderChars('');
 
   return $table;
 }
