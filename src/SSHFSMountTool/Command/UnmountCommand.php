@@ -32,7 +32,7 @@ class UnmountCommand extends Command {
       $cid = $input->getArgument('connection_id');
       if (!match_cid($cid, $connections_data)) {
         $output->writeln($cid . ' is not a mounted connection ID');
-        return 2;
+        return Command::INVALID;
       }
     }
     // cid not provided
@@ -42,7 +42,7 @@ class UnmountCommand extends Command {
       if (empty($connections_data)) {
         $output->writeln('No mounted connections');
         // not an error
-        return 0;
+        return Command::SUCCESS;
       }
       // one mounted connection and only one connection in config file
       elseif (count($connections_data) == 1 && count(get_settings('connections')) == 1) {
@@ -75,7 +75,7 @@ class UnmountCommand extends Command {
 
         if (!$cid) {
           // canceled
-          return 0;
+          return Command::SUCCESS;
         }
       }
     }
@@ -89,7 +89,7 @@ class UnmountCommand extends Command {
     }
 
     // Command execution
-    $process = new Process($cmd);
+    $process = Process::fromShellCommandline($cmd);
     $process->run();
 
     // Normal massages
@@ -106,6 +106,8 @@ class UnmountCommand extends Command {
         $output->writeln($success_message);
       }
     }
+
+    return Command::SUCCESS;
 
   }
 }

@@ -98,7 +98,7 @@ class AddCommand extends Command {
     $prompt_options = ($output->isVerbose()) ? 'Mount options, separated by comma []: ' : 'Mount options []: ';
     $options_question = new Question($prompt_options);
     $options = $helper->ask($input, $output, $options_question);
-    $options = explode(',', $options);
+    $options = explode(',', $options ? $options : '');
     $options = array_map('trim', $options);
     $connection_settings['options'] = array_filter($options);
 
@@ -163,11 +163,13 @@ class AddCommand extends Command {
     }
     else {
       // canceled
-      return 0;
+      return Command::SUCCESS;
     }
 
     // here can be only success savings
     $output->writeln('<info>Connection saved</info>');
+
+    return Command::SUCCESS;
 
   }
 }
