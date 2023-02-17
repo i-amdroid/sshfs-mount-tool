@@ -15,8 +15,8 @@ Requirements
 * PHP CLI >= 8.0.2
 * SSHFS
 
-Instalation
------------
+Installation
+------------
 
 ### Install SSHFS
 
@@ -101,7 +101,7 @@ or just:
 
     smt
 
-It will show saved connetcions to choose one or automatically mount, if only one connection exist in config file. 
+It will show saved connections to choose one or automatically mount, if only one connection exist in config file. 
 
 **Unmount connection**
 
@@ -131,7 +131,7 @@ or:
 
 Currently supported only in default Ubuntu terminal (gnome-terminal), default macOS terminal (Terminal.app) and iTerm.
 
-Launching SSH sessions with password authentification require `sshpass`.
+Launching SSH sessions with password authentication require `sshpass`.
 
 Installing on Ubuntu:
 
@@ -143,7 +143,7 @@ Installing on macOS:
 
 **Config files**
 
-Global config file `~/.config/smt/stm.yml` usefull for storing multiple often used connections.
+Global config file `~/.config/smt/stm.yml` useful for storing multiple often used connections.
 
 Config file `stm.yml` in current directory useful for storing per project connections in project folder. If only one connection exist in config file, it will be automatically used as `<connection id>` argument for commands. For example:
 
@@ -159,7 +159,7 @@ Development
 
 SMT initially has been written on pure PHP.
 
-V2 has been completely rewriten with Symfony Console component.
+V2 has been completely rewritten with Symfony Console component.
 
 V3 has been upgraded to use modern versions of PHP, Symfony, and other dependencies.
 
@@ -169,7 +169,7 @@ Any contributions are welcome.
 
 * Add autocomplete suggestions
 * Add tests
-* Pretify info command
+* Prettify info command
 * Install with Homebrew
 
 **Build**
