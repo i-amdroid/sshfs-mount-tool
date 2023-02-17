@@ -7,7 +7,7 @@
     "manager",
     "CLI"
   ],
-  "version": "3.0.0",
+  "version": "3.0.1",
   "type": "project",
   "homepage": "https://github.com/i-amdroid/sshfs-mount-tool",
   "license": "CC0-1.0",
@@ -22,10 +22,10 @@
   ],
   "require": {
     "php": ">=8.0.2",
-    "symfony/console": "^6.0",
-    "symfony/event-dispatcher": "^6.0",
-    "symfony/yaml": "^6.0",
-    "symfony/process": "^6.0"
+    "symfony/console": "^6.2",
+    "symfony/event-dispatcher": "^6.2",
+    "symfony/yaml": "^6.2",
+    "symfony/process": "^6.2"
   },
   "autoload": {
     "psr-4": {

@@ -110,7 +110,7 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
 
   }
 
-  // Seems like something brokes after overriding help command
+  // Seems like something broken after overriding help command
   // and command like "smt mount -h" don't work anymore, so handle it manually. 
   // Not sure that this is the best way, but it works now.
   if ($input->getOption('help')) {
