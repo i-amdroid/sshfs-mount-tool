@@ -45,7 +45,7 @@ else {
   $user_terminals = get_settings('terminals', $env_preferences['user_preferences_file']);
 }
 
-// very simple merging, user preferences just overrides default
+// Very simple merging, user preferences just overrides default.
 $preferences = array_merge($default_preferences, $user_preferences, $env_preferences);
 $terminals = array_merge($default_terminals, $user_terminals);
 
@@ -59,16 +59,12 @@ function init() {
   switch (PHP_OS) {
     case 'Darwin':
       return 'macos.inc';
-      break;
     case 'Linux':
       return 'nix.inc';
-      break;
     default:
       echo 'Unsupported operation system' . PHP_EOL;
       exit(1);
-      break;
   }
-  return;
 }
 
 /**
@@ -81,12 +77,7 @@ function get_version() {
   global $preferences;
   $project_info = file_get_contents($preferences['project_info_file']);
   $project_info = json_decode($project_info, TRUE);
-  if (isset($project_info['version'])) {
-    return $project_info['version'];
-  }
-  else {
-    return 'Undefined';
-  }
+  return $project_info['version'] ?? 'Undefined';
 }
 
 /**
@@ -97,11 +88,11 @@ function get_version() {
  */
 function get_config_file() {
   global $preferences;
-  // global option is set
+  // Global option is set.
   if ($preferences['global']) {
     return $preferences['user_config_file'];
   }
-  // no global option, but exist config in current folder 
+  // No global option, but exist config in current folder.
   elseif (file_exists($preferences['current_config_file'])) {
     return $preferences['current_config_file'];
   }
@@ -124,10 +115,10 @@ function gen_user_config_file($config_file) {
   $config['default_preferences'] = $default_preferences;
   $config['default_terminals'] = $default_terminals;
 
-  // writing default values to file
+  // Writing default values to file.
   set_config($config, $config_file);
 
-  // comment default values and write section titles
+  // Comment default values and write section titles.
   $lines = file($config_file);
   $new_lines = '';
   if (is_array($lines)) {
@@ -184,12 +175,7 @@ function get_config($config_file = FALSE) {
  */
 function get_settings($section, $config_file = FALSE) {
   $config = get_config($config_file);
-  if (isset($config[$section])) {
-    return $config[$section];
-  }
-  else {
-    return [];
-  }
+  return $config[$section] ?? [];
 }
 
 /**
@@ -207,7 +193,7 @@ function get_settings($section, $config_file = FALSE) {
 function set_config($config, $config_file) {
   $yaml = Yaml::dump($config, 4, 2);
 
-  // if config file not exist yet, check and create folder for it if needed
+  // If config file not exist yet, check and create folder for it if needed.
   if (!file_exists($config_file)) {
     $config_file_dir = dirname($config_file);
     if (!is_dir($config_file_dir)) {
@@ -215,7 +201,7 @@ function set_config($config, $config_file) {
     }
   }
 
-  // @todo refactor to use Symfony output and return proper values
+  // TODO: refactor to use Symfony output and return proper values
   // https://api.symfony.com/4.1/Symfony/Component/Console/Output/ConsoleOutput.html
   if (file_put_contents($config_file, $yaml)) {
     chmod($config_file, 0777);
@@ -269,7 +255,7 @@ function get_connection_settings($cid) {
  */
 function set_connection_settings($cid, $connection_settings, $input, $output, $helper, $use_current_dir = FALSE) {
   global $preferences;
-  // save to current dir, no config in current dir, should not load global
+  // Save to current dir, no config in current dir, should not load global.
   if ($use_current_dir) {
     $config = get_config($preferences['current_config_file']);
   }
@@ -280,7 +266,7 @@ function set_connection_settings($cid, $connection_settings, $input, $output, $h
   if (isset($config['connections'])) {
     foreach ($config['connections'] as $key => $value) {
       if ($key == $cid) {
-        // ask for rewrite
+        // Ask for rewrite.
         $overwrite_question = new Question('Connection "' . $cid . '" already exists, overwrite it? [<comment>no</comment>]? ');
         $overwrite_question->setValidator(function ($answer) {
           if ($answer == 'y' || $answer == 'Y' || $answer == 'yes' || $answer == 'Yes' || $answer == 'YES') {
@@ -288,7 +274,7 @@ function set_connection_settings($cid, $connection_settings, $input, $output, $h
           }
           elseif ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL' ||
             $answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
-            // return from callback without value
+            // Return from callback without value.
             return;
           }
           else {
@@ -305,12 +291,11 @@ function set_connection_settings($cid, $connection_settings, $input, $output, $h
           $connection_exist = TRUE;
         }
         else {
-          // canceled
-          // @todo refactor to return proper values to command function
+          // Canceled.
+          // TODO: refactor to return proper values to command function
           // return;
           exit(0);
         }
-
       }
     }
   }
@@ -570,7 +555,7 @@ function match_cid($input, $connections_data = FALSE) {
 function validate_answer_as_connection($answer, $connections_data) {
   $cid = NULL;
 
-  // Answer looks like a number
+  // Answer looks like a number.
   if (filter_var($answer, FILTER_VALIDATE_INT)) {
     foreach ($connections_data as $connection => $connection_data) {
       if ($answer == $connection_data['n']) {
@@ -578,7 +563,7 @@ function validate_answer_as_connection($answer, $connections_data) {
       }
     }
   }
-  // Answer looks like a cid
+  // Answer looks like a cid.
   else {
     foreach ($connections_data as $connection => $connection_data) {
       if ($answer == $connection_data['cid']) {
@@ -592,6 +577,7 @@ function validate_answer_as_connection($answer, $connections_data) {
 
 /**
  * Determine providing of connection ID and return it.
+ *
  * If connection ID not provided:
  *  * if only one connection exist in config, it will be returned
  * automatically;
@@ -611,7 +597,6 @@ function validate_answer_as_connection($answer, $connections_data) {
  *  Connection ID or 0 if connection was not resolved.
  */
 function cid_resolver($input, $output, $helper) {
-
   if ($input->getArgument('connection_id')) {
     $cid = $input->getArgument('connection_id');
     if (!match_cid($cid)) {
@@ -619,21 +604,21 @@ function cid_resolver($input, $output, $helper) {
       return 0;
     }
   }
-  // cid not provided
+  // cid not provided.
   else {
     $connections_data = get_connections_data();
 
-    // no saved connections
+    // No saved connections.
     if (empty($connections_data)) {
       $output->writeln('No saved connections');
-      // not an error
+      // Not an error.
       return 0;
     }
-    // one connection
+    // One connection.
     elseif (count($connections_data) == 1) {
       $cid = $connections_data[0]['cid'];
     }
-    // multiple connections
+    // Multiple connections.
     else {
       $table = gen_connections_table($connections_data, $output);
       $table->render();
@@ -658,7 +643,7 @@ function cid_resolver($input, $output, $helper) {
       $cid = $helper->ask($input, $output, $question);
 
       if (!$cid) {
-        // canceled
+        // Canceled.
         return 0;
       }
     }
@@ -712,7 +697,7 @@ function get_mounts() {
 function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
   global $preferences;
   $connection_settings = get_connection_settings($cid);
-  // use provided password
+  // Use provided password.
   if ($password) {
     $connection_settings['password'] = $password;
   }
@@ -746,7 +731,7 @@ function gen_mount_cmd($cid, $password = FALSE, $masked = FALSE) {
     $cmd[] = $connection_settings['server'] . ':' . $connection_settings['remote'];
   }
 
-  // mount point required for mounting
+  // Mount point required for mounting.
   if (isset($connection_settings['mount'])) {
     $cmd[] = $connection_settings['mount'];
   }

@@ -3,25 +3,20 @@
 namespace SSHFSMountTool\Command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 
 class StatusCommand extends Command {
 
   protected function configure() {
-
     $this->setName('status');
     $this->setDescription('Show status of connections');
-    $this->setAliases([
-      'st',
-    ]);
+    $this->setAliases(['st']);
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
-
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
-
     if ($input->getArgument('connection_id')) {
       $cid = $input->getArgument('connection_id');
       if (!match_cid($cid)) {
@@ -39,10 +34,10 @@ class StatusCommand extends Command {
     }
     else {
       $connections_data = get_connections_data();
-      // no saved connections
+      // No saved connections.
       if (empty($connections_data)) {
         $output->writeln('No saved connections');
-        // not an error
+        // Not an error.
         return Command::SUCCESS;
       }
       $table = gen_connections_table($connections_data, $output);
@@ -50,6 +45,6 @@ class StatusCommand extends Command {
     }
 
     return Command::SUCCESS;
-
   }
+
 }

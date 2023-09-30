@@ -5,29 +5,29 @@
  * Provides main functionality.
  */
 
-// Include composer dependencies
-// Manual installation
-if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-  require_once __DIR__ . '/../vendor/autoload.php';
+// Include composer dependencies.
+// Manual installation.
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+  require_once __DIR__ . '/vendor/autoload.php';
 }
-// Installation with composer
-elseif (file_exists(__DIR__ . '/../../../autoload.php')) {
-  require_once __DIR__ . '/../../../autoload.php';
+// Installation with composer.
+elseif (file_exists(__DIR__ . '/../../autoload.php')) {
+  require_once __DIR__ . '/../../autoload.php';
 }
 else {
   echo 'You must set up the project dependencies using "composer install"' . PHP_EOL;
 }
-// Include base project config and functions
-require __DIR__ . '/../includes/bootstrap.inc';
+// Include base project config and functions.
+require __DIR__ . '/includes/bootstrap.inc';
 
 use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\ConsoleEvents;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
-// Registering commands
+// Registering commands.
 $command_list = [
   'SSHFSMountTool\Command\MountCommand',
   'SSHFSMountTool\Command\UnmountCommand',
@@ -41,7 +41,7 @@ $command_list = [
   'SSHFSMountTool\Command\CdCommand',
   'SSHFSMountTool\Command\SshCommand',
 ];
-$command_names = [];
+$command_names = ['completion'];
 $command_aliases = [];
 $commands = [];
 
@@ -54,7 +54,7 @@ foreach ($command_list as $key => $command_class) {
 
 $aliases = array_merge($command_names, $command_aliases);
 
-// Emulate $app->setDefaultCommand for handling arguments
+// Emulate $app->setDefaultCommand for handling arguments.
 $first_arg_is_command = FALSE;
 
 if (isset($_SERVER['argv'][1])) {
@@ -70,20 +70,20 @@ if (!$first_arg_is_command) {
   array_splice($_SERVER['argv'], 1, 0, 'mount');
 }
 
-// Define app
+// Define app.
 $app = new Application('SSHFS Mount Tool', get_version());
 
-// Add global option to the app
+// Add global option to the app.
 $app->getDefinition()->addOption(
   new InputOption('global', 'g', InputOption::VALUE_NONE, 'Use global connections')
 );
 
-// Add info command as app option
+// Add info command as app option.
 $app->getDefinition()->addOption(
   new InputOption('info', 'i', InputOption::VALUE_NONE, 'Display information about dependencies')
 );
 
-// Handle global, info and help options
+// Handle global, info and help options.
 $dispatcher = new EventDispatcher();
 $app->setDispatcher($dispatcher);
 
@@ -105,7 +105,7 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
     $exitCode = $info_command->run($input, $output);
     exit($exitCode);
 
-    // @todo find proper way to exit without running default command after
+    // TODO: find proper way to exit without running default command after
     // return 0;
 
   }
@@ -124,7 +124,7 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
     $exitCode = $help_command->run($new_input, $output);
     exit($exitCode);
 
-    // @todo find proper way to exit without running default command after
+    // TODO: find proper way to exit without running default command after
     // return 0;
 
   }
@@ -135,5 +135,3 @@ $app->addCommands($commands);
 $app->setDefaultCommand('mount');
 
 $app->run();
-
-

@@ -12,7 +12,7 @@ Requirements
 ------------
 
 * Linux/macOS
-* PHP CLI >= 8.0.2
+* PHP CLI >= 8.1.0
 * SSHFS
 
 Installation
@@ -113,16 +113,17 @@ or:
 
 **All commands**
 
-`smt [<connection id>, -p <password>]` — Mount connection  
-`smt um [<connection id>]` — Unmount connection  
+`smt (mount) [<connection id>, -p <password>]` — Mount connection  
+`smt unmount (um) [<connection id>]` — Unmount connection  
 `smt add` — Add connection  
-`smt rm [<connection id>]` — Remove connection  
-`smt ls [<connection id>]` — List connection properties  
-`smt st` — Show status of connections  
-`smt config` — Open config file  
-`smt -h [<command>]` — Show help  
-`smt -V` — Show version  
-`smt -i` — Show information about dependencies  
+`smt remove (rm) [<connection id>]` — Remove connection  
+`smt list (ls) [<connection id>]` — List connection properties  
+`smt status (st)` — Show status of connections  
+`smt config (cfg)` — Open config file  
+`smt help (-h) [<command>]` — Show help  
+`smt --version (-V)` — Show version  
+`smt info (--info, -i)` — Show information about dependencies  
+`smt completion [<shell>]` — Dump the shell completion script  
 
 **Limited support commands**
 
@@ -150,7 +151,7 @@ Config file `stm.yml` in current directory useful for storing per project connec
 `smt` — Mount connection  
 `smt um` — Unmount connection  
 
-If SMT run from folder which contain `stm.yml` file, this file will be used as config file. In other case global config file will be used. For using global config file from folder which contain `stm.yml` file, use global option (`-g, --global`).
+If SMT run from folder which contain `stm.yml` file, this file will be used as config file. Otherwise, global config file will be used. For using global config file from folder which contains `stm.yml` file, use global option (`-g, --global`).
 
 Since v2.1, SMT supports user preferences in `~/.config/smt/config.yml` file. Preferences allow to customize SSHFS commands, default options, add new terminals, choose editor, default mount folder, default global option state.
 
@@ -161,13 +162,14 @@ SMT initially has been written on pure PHP.
 
 V2 has been completely rewritten with Symfony Console component.
 
-V3 has been upgraded to use modern versions of PHP, Symfony, and other dependencies.
+V3 has been upgraded to use Symfony 6.2.
+
+V4 has been upgraded to use Symfony 6.3.
 
 Any contributions are welcome.
 
 **Future plans**
 
-* Add autocomplete suggestions
 * Add tests
 * Prettify info command
 * Install with Homebrew

@@ -1,6 +1,6 @@
 {
   "chmod": "0755",
-  "files": ["composer.json", "README.md"],
+  "files": ["smt.php", "composer.json", "README.md"],
   "directories": ["src", "includes"],
   "finder": [
     {
@@ -16,7 +16,7 @@
       ]
     }
   ],
-  "main": "bin/smt",
+  "main": "smt",
   "output": "smt.phar",
   "stub": true,
   "exclude-composer-files": false
