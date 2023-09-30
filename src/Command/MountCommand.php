@@ -41,7 +41,7 @@ class MountCommand extends Command {
     $connection_settings = get_connection_settings($cid);
 
     // Check existing of mount point and create if needed.
-    if (substr($connection_settings['mount'], 0, 1) == '~') {
+    if (str_starts_with($connection_settings['mount'], '~')) {
       $mount_dir = $preferences['home_path'] . substr($connection_settings['mount'], 1);
     }
     else {

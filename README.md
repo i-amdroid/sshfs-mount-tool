@@ -62,20 +62,23 @@ Usage
 
 Connection properties:
 
-| Property   | Description           |
-| ---------- | --------------------- |
-| `id`       | Connection ID         |
-| `title`    | Title                 |
-| `server`   | Server                |
-| `port`     | Port                  |
-| `user`     | Username              |
-| `password` | Password              |
-| `key`      | Path to key file      |
-| `mount`    | Mount directory       |
-| `remote`   | Remote directory      |
-| `options`  | List of SSHFS options |
+| Property      | Description           |
+|---------------|-----------------------|
+| `id`          | Connection ID         |
+| `title`       | Title                 |
+| `server`      | Server                |
+| `port`        | Port                  |
+| `user`        | Username              |
+| `password`    | Password              |
+| `key`         | Path to key file      |
+| `mount`       | Mount directory       |
+| `remote`      | Remote directory      |
+| `options`     | List of SSHFS options |
+| `ssh_options` | List of SSH options   |
 
 Connections can be stored in YAML file in `~/.config/smt/stm.yml` (global) or in `stm.yml` in current directory.
+
+`ssh_options` are not prompted during `add` command, so they need to be added to config file manually. 
 
 Example of config file:
 
@@ -90,7 +93,12 @@ connections:
     key: ~/.ssh/id_rsa
     mount: ~/mnt/msrv
     remote: /var/www
-    options: {  }
+    options:
+      - some_option
+      - SomeAnotherOption=yes
+    ssh_options:
+      - '-o SomeOption=100'
+      - '-f SomeFlag 200'
 ~~~
 
 **Mount connection**

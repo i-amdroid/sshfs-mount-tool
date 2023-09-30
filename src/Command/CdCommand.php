@@ -29,7 +29,7 @@ class CdCommand extends Command {
     $connection_settings = get_connection_settings($cid);
 
     if (isset($connection_settings['mount'])) {
-      if (substr($connection_settings['mount'], 0, 1) == '~') {
+      if (str_starts_with($connection_settings['mount'], '~')) {
         $path = $preferences['home_path'] . substr($connection_settings['mount'], 1);
       }
       else {

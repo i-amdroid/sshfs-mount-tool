@@ -31,6 +31,9 @@ $default_preferences['default_options'] = [
   'follow_symlinks',
   'StrictHostKeyChecking=no',
 ];
+$default_preferences['default_ssh_options'] = [
+  '-o ServerAliveInterval=60',
+];
 
 $env_preferences['os_functions_inc'] = init();
 require $env_preferences['os_functions_inc'];
@@ -452,7 +455,7 @@ function gen_connection_settings_table($cid, $connection_settings, $output) {
   ]);
 
   foreach ($connection_settings as $key => $value) {
-    if ($key == 'options') {
+    if (in_array($key, ['options', 'ssh_options'])) {
       $table->addRow([
         $key,
         implode(',', $value),
@@ -497,7 +500,7 @@ function get_cid($mount_point) {
     if ($mount_point == $connection_settings['mount']) {
       return $cid;
     }
-    elseif (substr($connection_settings['mount'], 0, 1) == '~') {
+    elseif (str_starts_with($connection_settings['mount'], '~')) {
       $absolute_path = $preferences['home_path'] . substr($connection_settings['mount'], 1);
       if ($mount_point == $absolute_path) {
         return $cid;
@@ -557,7 +560,7 @@ function validate_answer_as_connection($answer, $connections_data) {
 
   // Answer looks like a number.
   if (filter_var($answer, FILTER_VALIDATE_INT)) {
-    foreach ($connections_data as $connection => $connection_data) {
+    foreach ($connections_data as $connection_data) {
       if ($answer == $connection_data['n']) {
         $cid = $connection_data['cid'];
       }
@@ -565,7 +568,7 @@ function validate_answer_as_connection($answer, $connections_data) {
   }
   // Answer looks like a cid.
   else {
-    foreach ($connections_data as $connection => $connection_data) {
+    foreach ($connections_data as $connection_data) {
       if ($answer == $connection_data['cid']) {
         $cid = $connection_data['cid'];
       }

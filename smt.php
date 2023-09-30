@@ -88,7 +88,6 @@ $dispatcher = new EventDispatcher();
 $app->setDispatcher($dispatcher);
 
 $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $event) {
-
   global $preferences;
   $input = $event->getInput();
 
@@ -107,7 +106,6 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
 
     // TODO: find proper way to exit without running default command after
     // return 0;
-
   }
 
   // Seems like something broken after overriding help command
@@ -126,9 +124,7 @@ $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $
 
     // TODO: find proper way to exit without running default command after
     // return 0;
-
   }
-
 });
 
 $app->addCommands($commands);

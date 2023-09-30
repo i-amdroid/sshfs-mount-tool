@@ -19,6 +19,8 @@ class SshCommand extends Command {
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
+    global $preferences;
+
     $helper = $this->getHelper('question');
     $cid = cid_resolver($input, $output, $helper);
 
@@ -48,11 +50,20 @@ class SshCommand extends Command {
     }
 
     $cmd .= 'ssh ';
+    // SSH options.
+    $ssh_options = $preferences['default_ssh_options'];
+    if (isset($connection_settings['ssh_options'])) {
+      $ssh_options = array_merge($ssh_options, $connection_settings['ssh_options']);
+    }
+    $cmd .= implode(' ', $ssh_options) . ' ';
+
+    // User and server.
     if (isset($connection_settings['user'])) {
       $cmd .= $connection_settings['user'] . '@';
     }
     $cmd .= $connection_settings['server'];
 
+    // Port.
     if ($connection_settings['port']) {
       $cmd .= ' -p ' . $connection_settings['port'];
     };

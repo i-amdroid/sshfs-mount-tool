@@ -91,13 +91,22 @@ class AddCommand extends Command {
     $remote = new Question('Remote directory []: ');
     $connection_settings['remote'] = $helper->ask($input, $output, $remote);
 
-    // Options.
+    // Mount Options.
     $prompt_options = ($output->isVerbose()) ? 'Mount options, separated by comma []: ' : 'Mount options []: ';
     $options_question = new Question($prompt_options);
     $options = $helper->ask($input, $output, $options_question);
-    $options = explode(',', $options ? $options : '');
+    $options = explode(',', $options ?: '');
     $options = array_map('trim', $options);
     $connection_settings['options'] = array_filter($options);
+
+    // TODO: Consider prompting for SSH options.
+    // SSH Options.
+    // $prompt_ssh_options = ($output->isVerbose()) ? 'SSH options, separated by comma []: ' : 'SSH options []: ';
+    // $ssh_options_question = new Question($prompt_ssh_options);
+    // $ssh_options = $helper->ask($input, $output, $ssh_options_question);
+    // $ssh_options = explode(',', $ssh_options ?: '');
+    // $ssh_options = array_map('trim', $ssh_options);
+    // $connection_settings['ssh_options'] = array_filter($ssh_options);
 
     // Title.
     $title_question = new Question('Connection title [<comment>' . $default_title . '</comment>]: ', $default_title);
