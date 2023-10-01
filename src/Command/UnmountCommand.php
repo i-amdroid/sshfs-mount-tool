@@ -3,28 +3,23 @@
 namespace SSHFSMountTool\Command;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\Process;
 
 class UnmountCommand extends Command {
 
   protected function configure() {
-
     $this->setName('unmount');
     $this->setDescription('Unmount connection');
     $this->setHelp('Unmount mounted connection');
-    $this->setAliases([
-      'um',
-    ]);
+    $this->setAliases(['um']);
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
-
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
-
     $mounted_only = TRUE;
     $connections_data = get_connections_data($mounted_only);
 
@@ -35,20 +30,19 @@ class UnmountCommand extends Command {
         return Command::INVALID;
       }
     }
-    // cid not provided
+    // cid not provided.
     else {
-
-      // no mounted connections
+      // No mounted connections.
       if (empty($connections_data)) {
         $output->writeln('No mounted connections');
-        // not an error
+        // Not an error.
         return Command::SUCCESS;
       }
-      // one mounted connection and only one connection in config file
+      // One mounted connection and only one connection in config file.
       elseif (count($connections_data) == 1 && count(get_settings('connections')) == 1) {
         $cid = $connections_data[0]['cid'];
       }
-      // multiple mounted connections or multiple connections in config file
+      // Multiple mounted connections or multiple connections in config file.
       else {
         $table = gen_connections_table($connections_data, $output);
         $table->render();
@@ -57,7 +51,7 @@ class UnmountCommand extends Command {
         $question = new Question('Number or ID of connection [<comment>cancel</comment>]: ');
         $question->setValidator(function ($answer) use ($connections_data) {
           if ($answer == '' || $answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL') {
-            // return from callback without $cid
+            // Return from callback without $cid.
             return;
           }
           $cid = validate_answer_as_connection($answer, $connections_data);
@@ -74,7 +68,7 @@ class UnmountCommand extends Command {
         $cid = $helper->ask($input, $output, $question);
 
         if (!$cid) {
-          // canceled
+          // Canceled.
           return Command::SUCCESS;
         }
       }
@@ -83,12 +77,12 @@ class UnmountCommand extends Command {
     $cmd = gen_unmount_cmd($cid);
     $connection_settings = get_connection_settings($cid);
 
-    // Verbose messages
+    // Verbose messages.
     if ($output->isVerbose()) {
       $output->writeln($cmd);
     }
 
-    // Command execution
+    // Command execution.
     $process = Process::fromShellCommandline($cmd);
     $process->run();
 
@@ -108,6 +102,6 @@ class UnmountCommand extends Command {
     }
 
     return Command::SUCCESS;
-
   }
+
 }

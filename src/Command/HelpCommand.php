@@ -18,16 +18,14 @@ class HelpCommand extends Command {
    */
   protected function configure() {
     $this->ignoreValidationErrors();
-
-    $this
-      ->setName('help')
-      ->setDefinition([
-        new InputArgument('command_name', InputArgument::OPTIONAL, 'The command name', FALSE),
-        new InputOption('format', NULL, InputOption::VALUE_REQUIRED, 'The output format (txt, xml, json, or md)', 'txt'),
-        new InputOption('raw', NULL, InputOption::VALUE_NONE, 'To output raw command help'),
-      ])
-      ->setDescription('Displays help for a command')
-      ->setHelp(<<<'EOF'
+    $this->setName('help');
+    $this->setDefinition([
+      new InputArgument('command_name', InputArgument::OPTIONAL, 'The command name', FALSE),
+      new InputOption('format', NULL, InputOption::VALUE_REQUIRED, 'The output format (txt, xml, json, or md)', 'txt'),
+      new InputOption('raw', NULL, InputOption::VALUE_NONE, 'To output raw command help'),
+    ]);
+    $this->setDescription('Displays help for a command');
+    $this->setHelp(<<<'EOF'
 The <info>%command.name%</info> command displays help for a given command:
 
   <info>php %command.full_name% mount</info>
@@ -38,7 +36,7 @@ You can also output the help in other formats by using the <comment>--format</co
 
 To display the list of available commands, please use the <info>help</info> command without arguments.
 EOF
-      );
+    );
   }
 
   public function setCommand(Command $command) {
@@ -46,15 +44,12 @@ EOF
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
-
     if (!$input->getArgument('command_name')) {
-
       $helper = new DescriptorHelper();
       $helper->describe($output, $this->getApplication(), [
         'format' => $input->getOption('format'),
         'raw_text' => $input->getOption('raw'),
       ]);
-
     }
     else {
       if (NULL === $this->command) {
@@ -72,7 +67,6 @@ EOF
     }
 
     return Command::SUCCESS;
-    
   }
 
 }

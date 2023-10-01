@@ -3,33 +3,30 @@
 namespace SSHFSMountTool\Command;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
 
 class MountCommand extends Command {
 
   protected function configure() {
-
     $this->setName('mount');
     $this->setDescription('<comment>Mount connection (default)</comment>');
     $this->setHelp('Mount previously saved connection' . PHP_EOL . 'This is default command and can be used without specifying "mount".');
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
     $this->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Provide password');
-
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
-
     global $preferences;
 
     $helper = $this->getHelper('question');
     $cid = cid_resolver($input, $output, $helper);
 
     if (!$cid) {
-      // canceled
+      // Canceled.
       return Command::SUCCESS;
     }
 
@@ -43,8 +40,8 @@ class MountCommand extends Command {
     $cmd = gen_mount_cmd($cid, $password);
     $connection_settings = get_connection_settings($cid);
 
-    // check existing of mount point and create if needed
-    if (substr($connection_settings['mount'], 0, 1) == '~') {
+    // Check existing of mount point and create if needed.
+    if (str_starts_with($connection_settings['mount'], '~')) {
       $mount_dir = $preferences['home_path'] . substr($connection_settings['mount'], 1);
     }
     else {
@@ -54,17 +51,17 @@ class MountCommand extends Command {
       mkdir($mount_dir, 0777, TRUE);
     }
 
-    // Verbose messages
+    // Verbose messages.
     if ($output->isVerbose()) {
       $masked_cmd = gen_mount_cmd($cid, $password, TRUE);
       $output->writeln($masked_cmd);
     }
 
-    // Command execution
+    // Command execution.
     $process = Process::fromShellCommandline($cmd);
     $process->run();
 
-    // Normal massages
+    // Normal massages.
     if (!$process->isSuccessful()) {
       // throw new ProcessFailedException($process);
       $output->writeln($process->getErrorOutput());
@@ -80,6 +77,6 @@ class MountCommand extends Command {
     }
 
     return Command::SUCCESS;
-
   }
+
 }
