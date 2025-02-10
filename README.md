@@ -174,6 +174,8 @@ V3 has been upgraded to use Symfony 6.2.
 
 V4 has been upgraded to use Symfony 6.3.
 
+V4.1 has been upgraded to use Symfony 6.4.
+
 Any contributions are welcome.
 
 **Future plans**
