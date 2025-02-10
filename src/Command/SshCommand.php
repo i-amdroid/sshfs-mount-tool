@@ -18,7 +18,7 @@ class SshCommand extends Command {
     $this->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Provide password');
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     global $preferences;
 
     $helper = $this->getHelper('question');

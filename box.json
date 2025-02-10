@@ -1,5 +1,5 @@
 {
-  "files": ["smt.php", "composer.json", "README.md"],
+  "files": ["composer.json", "README.md"],
   "directories": ["src", "includes"],
   "finder": [
     {

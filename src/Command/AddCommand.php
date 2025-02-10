@@ -14,7 +14,7 @@ class AddCommand extends Command {
     $this->setDescription('Add connection');
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     global $preferences;
     $connection_settings = [];
     $helper = $this->getHelper('question');

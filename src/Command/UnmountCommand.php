@@ -19,7 +19,7 @@ class UnmountCommand extends Command {
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     $mounted_only = TRUE;
     $connections_data = get_connections_data($mounted_only);
 

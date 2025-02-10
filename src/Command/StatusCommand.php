@@ -16,7 +16,7 @@ class StatusCommand extends Command {
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     if ($input->getArgument('connection_id')) {
       $cid = $input->getArgument('connection_id');
       if (!match_cid($cid)) {
