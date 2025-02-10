@@ -14,7 +14,7 @@ class InfoCommand extends Command {
     $this->setDescription('Display information about dependencies');
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     // SMT version.
     $smt_version = get_version();
     $output->writeln('SSHFS Mount Tool <info>' . $smt_version . '</info>');

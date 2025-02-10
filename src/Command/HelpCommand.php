@@ -43,7 +43,7 @@ EOF
     $this->command = $command;
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     if (!$input->getArgument('command_name')) {
       $helper = new DescriptorHelper();
       $helper->describe($output, $this->getApplication(), [

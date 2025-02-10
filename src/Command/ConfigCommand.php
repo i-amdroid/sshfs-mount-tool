@@ -18,7 +18,7 @@ class ConfigCommand extends Command {
     $this->addOption('settings', 's', InputOption::VALUE_NONE, 'Open SMT settings file (preferences)');
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     global $preferences;
 
     if ($input->getOption('settings')) {

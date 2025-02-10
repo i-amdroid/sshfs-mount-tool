@@ -17,7 +17,7 @@ class RemoveCommand extends Command {
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
   }
 
-  protected function execute(InputInterface $input, OutputInterface $output) {
+  protected function execute(InputInterface $input, OutputInterface $output): int {
     $helper = $this->getHelper('question');
     $cid = cid_resolver($input, $output, $helper);
 
