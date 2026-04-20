@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SSHFSMountTool\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\DescriptorHelper;
 use Symfony\Component\Console\Input\InputArgument;
@@ -9,63 +12,80 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class HelpCommand extends Command {
+/**
+ * Overrides Symfony's built-in HelpCommand so that `smt help` (no arg)
+ * prints the application-level command list instead of describing the
+ * help command itself.
+ *
+ * This is needed because we register a `list` command of our own (listing
+ * connection properties), which shadows Symfony's built-in `list` command
+ * that the default HelpCommand dispatches to when no argument is provided.
+ */
+#[AsCommand(
+  name: 'help',
+  description: 'Show help for a command, or list all commands',
+)]
+final class HelpCommand extends Command {
 
-  private $command;
+  private ?Command $target = NULL;
 
   /**
-   * {@inheritdoc}
+   * Invoked by Symfony's Application when `-h` / `--help` is used on a
+   * specific command — injects that command as the one to describe.
    */
-  protected function configure() {
-    $this->ignoreValidationErrors();
-    $this->setName('help');
-    $this->setDefinition([
-      new InputArgument('command_name', InputArgument::OPTIONAL, 'The command name', FALSE),
-      new InputOption('format', NULL, InputOption::VALUE_REQUIRED, 'The output format (txt, xml, json, or md)', 'txt'),
-      new InputOption('raw', NULL, InputOption::VALUE_NONE, 'To output raw command help'),
-    ]);
-    $this->setDescription('Displays help for a command');
-    $this->setHelp(<<<'EOF'
-The <info>%command.name%</info> command displays help for a given command:
-
-  <info>php %command.full_name% mount</info>
-
-You can also output the help in other formats by using the <comment>--format</comment> option:
-
-  <info>php %command.full_name% --format=xml mount</info>
-
-To display the list of available commands, please use the <info>help</info> command without arguments.
-EOF
-    );
+  public function setCommand(Command $command): void {
+    $this->target = $command;
   }
 
-  public function setCommand(Command $command) {
-    $this->command = $command;
+  protected function configure(): void {
+    $this->ignoreValidationErrors();
+    $this
+      ->setDefinition([
+        new InputArgument('command_name', InputArgument::OPTIONAL, 'The command name'),
+        new InputOption(
+          'format',
+          NULL,
+          InputOption::VALUE_REQUIRED,
+          'The output format (txt, xml, json, or md)',
+          'txt',
+        ),
+        new InputOption('raw', NULL, InputOption::VALUE_NONE, 'Output raw command help'),
+      ])
+      ->setHelp(<<<'EOF'
+        The <info>%command.name%</info> command describes a specific command:
+
+          <info>%command.full_name% mount</info>
+
+        With no argument, it lists every available command.
+        EOF);
   }
 
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    if (!$input->getArgument('command_name')) {
-      $helper = new DescriptorHelper();
-      $helper->describe($output, $this->getApplication(), [
-        'format' => $input->getOption('format'),
-        'raw_text' => $input->getOption('raw'),
-      ]);
-    }
-    else {
-      if (NULL === $this->command) {
-        $this->command = $this->getApplication()
-          ->find($input->getArgument('command_name'));
-      }
-
-      $helper = new DescriptorHelper();
-      $helper->describe($output, $this->command, [
-        'format' => $input->getOption('format'),
-        'raw_text' => $input->getOption('raw'),
-      ]);
-
-      $this->command = NULL;
+    $application = $this->getApplication();
+    if ($application === NULL) {
+      return Command::FAILURE;
     }
 
+    $name = $input->getArgument('command_name');
+    $options = [
+      'format' => (string) ($input->getOption('format') ?? 'txt'),
+      'raw_text' => $input->getOption('raw') === TRUE,
+    ];
+
+    $helper = new DescriptorHelper();
+
+    if ($this->target !== NULL) {
+      $helper->describe($output, $this->target, $options);
+      $this->target = NULL;
+      return Command::SUCCESS;
+    }
+
+    if (!is_string($name) || $name === '') {
+      $helper->describe($output, $application, $options);
+      return Command::SUCCESS;
+    }
+
+    $helper->describe($output, $application->find($name), $options);
     return Command::SUCCESS;
   }
 

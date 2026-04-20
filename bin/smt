@@ -1,0 +1,38 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use SSHFSMountTool\Application;
+use SSHFSMountTool\Config\PreferencesLoader;
+use SSHFSMountTool\Services;
+
+$autoload_paths = [
+  __DIR__ . '/../vendor/autoload.php',
+  __DIR__ . '/../../../autoload.php',
+];
+
+$autoload = NULL;
+foreach ($autoload_paths as $path) {
+  if (file_exists($path)) {
+    $autoload = $path;
+    break;
+  }
+}
+
+if ($autoload === NULL) {
+  fwrite(STDERR, 'You must set up the project dependencies using "composer install"' . PHP_EOL);
+  exit(1);
+}
+
+require $autoload;
+
+$argv = $_SERVER['argv'] ?? [];
+
+$preferences = new PreferencesLoader()->load();
+if (Application::isGlobalFlagSet($argv)) {
+  $preferences = $preferences->withGlobal(TRUE);
+}
+
+$services = new Services($preferences);
+exit(new Application($services)->run());

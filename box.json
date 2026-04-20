@@ -1,19 +1,15 @@
 {
-  "files": ["composer.json", "README.md"],
-  "directories": ["src", "includes"],
-  "finder": [
-    {
-      "in": "vendor",
-      "notName": "/LICENSE|.*\\.md|.*\\.dist|Makefile|composer\\.json|composer\\.lock/",
-      "exclude": [
-          "doc",
-          "test",
-          "test_old",
-          "tests",
-          "Tests",
-          "vendor-bin"
-      ]
-    }
-  ],
-  "exclude-composer-files": false
+    "output": "smt.phar",
+    "compression": "GZ",
+    "files": ["composer.json", "README.md"],
+    "directories": ["src"],
+    "finder": [
+        {
+            "in": "vendor",
+            "notName": "/LICENSE|.*\\.md|.*\\.dist|Makefile|composer\\.json|composer\\.lock/",
+            "exclude": ["doc", "test", "tests", "Tests", "vendor-bin"]
+        }
+    ],
+    "exclude-composer-files": false,
+    "banner": false
 }

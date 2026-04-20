@@ -1,36 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SSHFSMountTool\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
-class RemoveCommand extends Command {
+#[AsCommand(
+  name: 'remove',
+  description: 'Remove connection',
+  aliases: ['rm'],
+)]
+final class RemoveCommand extends AbstractCommand {
 
-  protected function configure() {
-    $this->setName('remove');
-    $this->setDescription('Remove connection');
-    $this->setAliases(['rm']);
-    $this->setHelp('Remove previously saved connection');
-    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
+  protected function configure(): void {
+    $this
+      ->setHelp('Remove previously saved connection.')
+      ->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
   }
 
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    $helper = $this->getHelper('question');
-    $cid = cid_resolver($input, $output, $helper);
-
-    if (!$cid) {
-      // Canceled.
+    $io = new SymfonyStyle($input, $output);
+    $cid = $this->services->resolver->resolve($io, $this->stringArgument($input, 'connection_id'));
+    if ($cid === NULL) {
       return Command::SUCCESS;
     }
 
-    remove_connection_settings($cid);
-
-    // Here can be only success removing.
-    $output->writeln('<info>Connection removed</info>');
-
+    $this->services->connections->remove($cid);
+    $io->writeln('<info>Connection removed</info>');
     return Command::SUCCESS;
   }
 

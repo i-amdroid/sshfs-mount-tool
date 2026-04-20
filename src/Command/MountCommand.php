@@ -1,79 +1,70 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SSHFSMountTool\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
-class MountCommand extends Command {
+#[AsCommand(
+  name: 'mount',
+  description: '<comment>Mount connection (default)</comment>',
+)]
+final class MountCommand extends AbstractCommand {
 
-  protected function configure() {
-    $this->setName('mount');
-    $this->setDescription('<comment>Mount connection (default)</comment>');
-    $this->setHelp('Mount previously saved connection' . PHP_EOL . 'This is default command and can be used without specifying "mount".');
-    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
-    $this->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Provide password');
+  protected function configure(): void {
+    $this
+      ->setHelp(
+        'Mount previously saved connection.'
+        . PHP_EOL
+        . 'This is the default command and may be used without specifying "mount".',
+      )
+      ->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection')
+      ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Provide password');
   }
 
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    global $preferences;
-
-    $helper = $this->getHelper('question');
-    $cid = cid_resolver($input, $output, $helper);
-
-    if (!$cid) {
-      // Canceled.
+    $io = new SymfonyStyle($input, $output);
+    $cid = $this->services->resolver->resolve($io, $this->stringArgument($input, 'connection_id'));
+    if ($cid === NULL) {
       return Command::SUCCESS;
     }
 
-    if ($input->getOption('password')) {
-      $password = $input->getOption('password');
-    }
-    else {
-      $password = FALSE;
-    }
-
-    $cmd = gen_mount_cmd($cid, $password);
-    $connection_settings = get_connection_settings($cid);
-
-    // Check existing of mount point and create if needed.
-    if (str_starts_with($connection_settings['mount'], '~')) {
-      $mount_dir = $preferences['home_path'] . substr($connection_settings['mount'], 1);
-    }
-    else {
-      $mount_dir = $connection_settings['mount'];
-    }
-    if (!is_dir($mount_dir)) {
-      mkdir($mount_dir, 0777, TRUE);
+    $connection = $this->services->connections->find($cid);
+    if ($connection === NULL) {
+      $io->error(sprintf('Connection "%s" not found', $cid));
+      return Command::FAILURE;
     }
 
-    // Verbose messages.
+    $password = $this->stringOption($input, 'password');
+
     if ($output->isVerbose()) {
-      $masked_cmd = gen_mount_cmd($cid, $password, TRUE);
-      $output->writeln($masked_cmd);
+      $command = $this->services->mountCommandBuilder->buildMount($connection, $password);
+      $io->writeln($this->services->mountCommandBuilder->displayMount($command));
     }
 
-    // Command execution.
-    $process = Process::fromShellCommandline($cmd);
-    $process->run();
+    $result = $this->services->mountService->mount($connection, $password);
 
-    // Normal massages.
-    if (!$process->isSuccessful()) {
-      // throw new ProcessFailedException($process);
-      $output->writeln($process->getErrorOutput());
+    if (!$result->isSuccessful()) {
+      $io->writeln(trim($result->stderr));
+      return Command::FAILURE;
+    }
+
+    if ($result->stdout !== '') {
+      $io->writeln($result->stdout);
     }
     else {
-      if ($process->getOutput()) {
-        $output->writeln($process->getOutput());
-      }
-      else {
-        $success_message = $connection_settings['title'] . ' ' . '<info>mounted</info>' . ' to ' . $connection_settings['mount'];
-        $output->writeln($success_message);
-      }
+      $io->writeln(sprintf(
+        '%s <info>mounted</info> to %s',
+        $connection->title,
+        $connection->mount,
+      ));
     }
 
     return Command::SUCCESS;

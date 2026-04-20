@@ -1,36 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SSHFSMountTool\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
-class ListCommand extends Command {
+#[AsCommand(
+  name: 'list',
+  description: 'List connection properties',
+  aliases: ['ls'],
+)]
+final class ListCommand extends AbstractCommand {
 
-  protected function configure() {
-    $this->setName('list');
-    $this->setDescription('List connection properties');
-    $this->setAliases(['ls']);
-    $this->setHelp('List previously saved connection properties');
-    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
+  protected function configure(): void {
+    $this
+      ->setHelp('List previously saved connection properties.')
+      ->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
   }
 
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    $helper = $this->getHelper('question');
-    $cid = cid_resolver($input, $output, $helper);
-
-    if (!$cid) {
-      // Canceled.
+    $io = new SymfonyStyle($input, $output);
+    $cid = $this->services->resolver->resolve($io, $this->stringArgument($input, 'connection_id'));
+    if ($cid === NULL) {
       return Command::SUCCESS;
     }
 
-    $connection_settings = get_connection_settings($cid);
+    $connection = $this->services->connections->find($cid);
+    if ($connection === NULL) {
+      $io->error(sprintf('Connection "%s" not found', $cid));
+      return Command::FAILURE;
+    }
 
-    $table = gen_connection_settings_table($cid, $connection_settings, $output);
-    $table->render();
-
+    $this->services->settingsTableRenderer->render($io, $connection);
     return Command::SUCCESS;
   }
 

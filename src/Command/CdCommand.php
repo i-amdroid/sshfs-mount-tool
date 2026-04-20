@@ -1,57 +1,73 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SSHFSMountTool\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
-class CdCommand extends Command {
+#[AsCommand(
+  name: 'cd',
+  description: 'Change directory to connection mount directory',
+)]
+final class CdCommand extends AbstractCommand {
 
-  protected function configure() {
-    $this->setName('cd');
-    $this->setDescription('Change directory to connection mount directory');
-    $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
+  protected function configure(): void {
+    $this
+      ->setHelp(
+        'Change directory to the connection\'s mount directory.'
+        . PHP_EOL
+        . 'Without options a new terminal tab is spawned (a child process cannot change the'
+        . ' parent shell\'s directory).'
+        . PHP_EOL
+        . 'With <comment>--eval</comment> the tool prints a quoted <info>cd</info> command to stdout; the shell wrapper'
+        . ' installed via <info>smt shell-init</info> wires this up so <info>smt cd &lt;id&gt;</info> changes the current tab.',
+      )
+      ->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection')
+      ->addOption('eval', 'e', InputOption::VALUE_NONE, 'Print a `cd` command to stdout for shell eval');
   }
 
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    global $preferences;
-    $helper = $this->getHelper('question');
-    $cid = cid_resolver($input, $output, $helper);
+    $eval_mode = $this->boolOption($input, 'eval');
 
-    if (!$cid) {
-      // Canceled.
+    // In eval mode all UI goes to stderr so stdout carries only the cd command.
+    $ui = $eval_mode && $output instanceof ConsoleOutputInterface
+      ? $output->getErrorOutput()
+      : $output;
+    $io = new SymfonyStyle($input, $ui);
+
+    $cid = $this->services->resolver->resolve($io, $this->stringArgument($input, 'connection_id'));
+    if ($cid === NULL) {
       return Command::SUCCESS;
     }
 
-    $connection_settings = get_connection_settings($cid);
-
-    if (isset($connection_settings['mount'])) {
-      if (str_starts_with($connection_settings['mount'], '~')) {
-        $path = $preferences['home_path'] . substr($connection_settings['mount'], 1);
-      }
-      else {
-        $path = $connection_settings['mount'];
-      }
-      $cmd = 'cd ' . $path;
-      $terminal_cmd = gen_terminal_cmd($cmd);
-
-      // Command execution.
-      $process = Process::fromShellCommandline($terminal_cmd);
-      $process->run();
-
-      // Normal massages.
-      if (!$process->isSuccessful()) {
-        // throw new ProcessFailedException($process);
-        $output->writeln($process->getErrorOutput());
-      }
+    $connection = $this->services->connections->find($cid);
+    if ($connection === NULL || $connection->mount === NULL) {
+      $io->error(sprintf('No mount point for %s set', $cid));
+      return Command::FAILURE;
     }
-    else {
-      $output->writeln('No mount point for ' . $cid . ' set');
+
+    $path = $this->services->pathExpander->expand($connection->mount);
+
+    if ($eval_mode) {
+      $output->writeln('cd ' . escapeshellarg($path));
+      return Command::SUCCESS;
+    }
+
+    $result = $this->services->terminalLauncher->launch('cd ' . escapeshellarg($path));
+    if (!$result->isSuccessful()) {
+      $io->writeln(trim($result->stderr));
+      return Command::FAILURE;
     }
 
     return Command::SUCCESS;
   }
+
 }

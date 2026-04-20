@@ -12,7 +12,7 @@ Requirements
 ------------
 
 * Linux/macOS
-* PHP CLI >= 8.1.0
+* PHP CLI >= 8.4
 * SSHFS
 
 Installation
@@ -22,43 +22,58 @@ Installation
 
 Ubuntu:
 
-    sudo apt install sshfs
+```bash
+sudo apt install sshfs
+```
 
-macOS ([osxfuse.github.io](https://osxfuse.github.io/)):
+macOS ([macFUSE](https://osxfuse.github.io/)):
 
-    brew install sshfs
+```bash
+brew install --cask macfuse
+brew install gromgit/fuse/sshfs-mac
+```
 
 ### Install SSHFS Mount Tool
 
 **Option 1: Install with Composer**
 
-    composer global require i-amdroid/sshfs-mount-tool
+```bash
+composer global require i-amdroid/sshfs-mount-tool
+```
 
-Check that Composer bin directory exists in your PATH.
+Check that the Composer bin directory exists in your PATH.
 Depending on your OS, Composer bin directory can be `$HOME/.composer/vendor/bin` or `$HOME/.config/composer/vendor/bin` ([read more](https://getcomposer.org/doc/03-cli.md#composer-home)).
 Depending on your shell, it can be set in `~/.bash_profile`, `~/.bashrc`, `~/.zshrc` etc.
 
-If Composer bin directory does not exist in PATH, add it like this:
+If the Composer bin directory does not exist in PATH, add it like this:
 
-    export PATH="$PATH:$HOME/.composer/vendor/bin"
+```bash
+export PATH="$PATH:$HOME/.composer/vendor/bin"
+```
 
 or
 
-    export PATH="$PATH:$HOME/.config/composer/vendor/bin"
+```bash
+export PATH="$PATH:$HOME/.config/composer/vendor/bin"
+```
 
 **Option 2: Manual installation**
 
-Download latest phar from [Releases](https://github.com/i-amdroid/sshfs-mount-tool/releases).
+Download the latest phar from [Releases](https://github.com/i-amdroid/sshfs-mount-tool/releases).
 
-    chmod 755 smt.phar
-    sudo mv smt.phar /usr/local/bin/smt
+```bash
+chmod 755 smt.phar
+sudo mv smt.phar /usr/local/bin/smt
+```
 
 Usage
 -----
 
 **Add connection**
 
-    smt add -v
+```bash
+smt add -v
+```
 
 Connection properties:
 
@@ -76,13 +91,14 @@ Connection properties:
 | `options`     | List of SSHFS options |
 | `ssh_options` | List of SSH options   |
 
-Connections can be stored in YAML file in `~/.config/smt/stm.yml` (global) or in `stm.yml` in current directory.
+Connections can be stored in YAML file in `~/.config/smt/smt.yml` (global) or in `smt.yml` in current directory.
+Files are created with `0600` permissions so passwords stored in them are only readable by you.
 
-`ssh_options` are not prompted during `add` command, so they need to be added to config file manually. 
+`ssh_options` are not prompted during `add` command, so they need to be added to a config file manually.
 
-Example of config file:
+Example of the config file:
 
-~~~language-yaml
+```yaml
 connections:
   msrv:
     title: myserver
@@ -99,25 +115,33 @@ connections:
     ssh_options:
       - '-o SomeOption=100'
       - '-f SomeFlag 200'
-~~~
+```
 
 **Mount connection**
 
-    smt <connection id>
+```bash
+smt <connection id>
+```
 
 or just:
 
-    smt
+```bash
+smt
+````
 
-It will show saved connections to choose one or automatically mount, if only one connection exist in config file. 
+It will show saved connections to choose one or automatically mount if only one connection exist in a config file.
 
 **Unmount connection**
 
-    smt um <connection id>
+```bash
+smt um <connection id>
+```
 
-or: 
+or:
 
-    smt um
+```bash
+smt um
+```
 
 **All commands**
 
@@ -131,44 +155,64 @@ or:
 `smt help (-h) [<command>]` — Show help  
 `smt --version (-V)` — Show version  
 `smt info (--info, -i)` — Show information about dependencies  
-`smt completion [<shell>]` — Dump the shell completion script  
+`smt completion [<shell>]` — Dump the shell completion script (supports connection ID completion)  
+`smt shell-init <shell>` — Print a shell wrapper enabling in-place `smt cd`  
 
-**Limited support commands**
+**SSH & cd — same tab vs new tab**
 
-`smt cd [<connection id>]` — Change directory to connection mount directory  
-`smt ssh [<connection id>]` — Launch SSH session  
+`smt ssh [<connection id>, -p <password>, -t/--new-tab]` — Launch SSH session  
+`smt cd [<connection id>, -e/--eval]` — Change directory to the connection's mount directory  
 
-Currently supported only in default Ubuntu terminal (gnome-terminal), default macOS terminal (Terminal.app) and iTerm.
+By default `smt ssh` attaches to the **current** terminal tab (ssh owns the TTY until you exit it). Pass `-t`/`--new-tab` to open a new tab instead.
+New-tab mode is only supported in default Ubuntu terminal (gnome-terminal), default macOS terminal (Terminal.app) and iTerm.
 
-Launching SSH sessions with password authentication require `sshpass`.
+A child process cannot change its parent shell's working directory, so `smt cd` defaults to spawning a new tab. Install the shell wrapper once and `smt cd <id>` will change the **current** tab instead:
+
+```bash
+# bash or zsh — add to ~/.bashrc / ~/.zshrc
+eval "$(smt shell-init bash)"      # or: zsh
+
+# fish — add to ~/.config/fish/config.fish
+smt shell-init fish | source
+```
+
+After that, `smt cd msrv` changes your shell's directory in-place.
+Under the hood the wrapper calls `smt cd --eval`, which prints a quoted `cd '…'` command to stdout for `eval`. All other subcommands (`mount`, `ssh`, `add`, …) pass through the wrapper unchanged.
+
+Launching SSH sessions with password authentication requires `sshpass`.
+Passwords are fed via a 0600 temporary file (`sshpass -f`) instead of the command line, so they are not visible in `ps`.
 
 Installing on Ubuntu:
 
-    sudo apt install sshpass
+```bash
+sudo apt install sshpass
+```
 
 Installing on macOS:
 
-    brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/master/Library/Formula/sshpass.rb
+```bash
+brew install hudochenkov/sshpass/sshpass
+```
 
 **Config files**
 
-Global config file `~/.config/smt/stm.yml` useful for storing multiple often used connections.
+Global config file `~/.config/smt/smt.yml` useful for storing multiple often used connections.
 
-Config file `stm.yml` in current directory useful for storing per project connections in project folder. If only one connection exist in config file, it will be automatically used as `<connection id>` argument for commands. For example:
+Config file `smt.yml` in current directory useful for storing per-project connections in project folder. If only one connection exist in a config file, it is automatically used as `<connection id>` argument for commands. For example:
 
 `smt` — Mount connection  
 `smt um` — Unmount connection  
 
-If SMT run from folder which contain `stm.yml` file, this file will be used as config file. Otherwise, global config file will be used. For using global config file from folder which contains `stm.yml` file, use global option (`-g, --global`).
+If SMT run from folder which contain `smt.yml` file, this file is used as a config file. Otherwise, the global config file is used. For using a global config file from folder which contains `smt.yml` file, use a global option (`-g, --global`).
 
-Since v2.1, SMT supports user preferences in `~/.config/smt/config.yml` file. Preferences allow to customize SSHFS commands, default options, add new terminals, choose editor, default mount folder, default global option state.
+SMT also supports user preferences in `~/.config/smt/config.yml` file. Preferences allow customizing SSHFS commands, default options, add new terminals, choose editor, default mount folder, default global option state.
 
 Development
 -----------
 
 SMT initially has been written on pure PHP.
 
-V2 has been completely rewritten with Symfony Console component.
+V2 has been completely rewritten with the Symfony Console component.
 
 V3 has been upgraded to use Symfony 6.2.
 
@@ -176,26 +220,42 @@ V4 has been upgraded to use Symfony 6.3.
 
 V4.1 has been upgraded to use Symfony 6.4.
 
+V4.2 has been upgraded to use Symfony 7.
+
+V5 is a full rewrite targeting PHP 8.4 and Symfony 8 with a proper layered architecture:
+
+- Procedural `includes/bootstrap.inc` replaced with typed, testable services (`Config`, `Connection`, `Mount`, `Ssh`, `Terminal`, `Process` namespaces).
+- All shell concatenation replaced with `Process` argv invocations. Passwords are passed to `sshfs` via stdin and to `ssh` via an ephemeral 0600 tempfile (`sshpass -f`) — never via the command line.
+- Commands use the `#[AsCommand]` attribute, `SymfonyStyle`, `ConfirmationQuestion`, and expose shell-completion suggestions for `connection_id`.
+- Config/preferences files are now written with `0600` perms and directories with `0700`.
+- PHPUnit tests (unit + integration with `CommandTester`) and Mago for formatting / linting / analysis.
+
 Any contributions are welcome.
-
-**Future plans**
-
-* Add tests
-* Prettify info command
-* Install with Homebrew
 
 **Build**
 
+Dev tools (mago, phpunit) come from the main `require-dev`; [Box](https://github.com/box-project/box) lives in an isolated `vendor-bin/box/` sandbox managed by [bamarni/composer-bin-plugin](https://github.com/bamarni/composer-bin-plugin), so its dependency tree is decoupled from the app's.
+
 1. Clone project
-2. Get dependencies via [Composer](https://getcomposer.org/)
-  
-  ~~~
-  composer install
-  ~~~
+2. Install dependencies
+    ```bash
+    composer install
+    ```
 
-3. Run build process via [Box](https://github.com/box-project/box)
+3. Install Box (runs once, then cached)
+    ```bash
+    composer bin box install
+    ```
 
-  ~~~
-  box compile
-  ~~~
+4. Build the phar
+    ```bash
+    composer box
+    ```
 
+**Development tasks**
+
+```bash
+composer lint        # mago lint
+composer format      # mago format
+composer test        # phpunit
+```

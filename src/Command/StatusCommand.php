@@ -1,49 +1,51 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SSHFSMountTool\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
-class StatusCommand extends Command {
+#[AsCommand(
+  name: 'status',
+  description: 'Show status of connections',
+  aliases: ['st'],
+)]
+final class StatusCommand extends AbstractCommand {
 
-  protected function configure() {
-    $this->setName('status');
-    $this->setDescription('Show status of connections');
-    $this->setAliases(['st']);
+  protected function configure(): void {
     $this->addArgument('connection_id', InputArgument::OPTIONAL, 'ID of the connection');
   }
 
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    if ($input->getArgument('connection_id')) {
-      $cid = $input->getArgument('connection_id');
-      if (!match_cid($cid)) {
-        $output->writeln($cid . ' is not a valid connection ID');
+    $io = new SymfonyStyle($input, $output);
+    $argument = $this->stringArgument($input, 'connection_id');
+
+    if ($argument !== NULL) {
+      if (!$this->services->connections->exists($argument)) {
+        $io->error(sprintf('%s is not a valid connection ID', $argument));
         return Command::INVALID;
       }
-
-      $mounts = get_mounts();
-      if (in_array($cid, $mounts)) {
-        $output->writeln($cid . ' is <info>mounted</info>');
-      }
-      else {
-        $output->writeln($cid . ' is not mounted');
-      }
-    }
-    else {
-      $connections_data = get_connections_data();
-      // No saved connections.
-      if (empty($connections_data)) {
-        $output->writeln('No saved connections');
-        // Not an error.
-        return Command::SUCCESS;
-      }
-      $table = gen_connections_table($connections_data, $output);
-      $table->render();
+      $mounted = in_array($argument, $this->services->mountInspector->mountedIds(), TRUE);
+      $io->writeln(
+        $mounted
+          ? sprintf('%s is <info>mounted</info>', $argument)
+          : sprintf('%s is not mounted', $argument),
+      );
+      return Command::SUCCESS;
     }
 
+    $rows = $this->services->resolver->listAll();
+    if ($rows === []) {
+      $io->writeln('No saved connections');
+      return Command::SUCCESS;
+    }
+    $this->services->tableRenderer->render($io, $rows);
     return Command::SUCCESS;
   }
 

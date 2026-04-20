@@ -1,4 +1,7 @@
 /vendor
+/vendor-bin/*/vendor
+/vendor-bin/*/composer.lock
 /.idea
+/.phpunit.cache
 smt.yml
 smt.phar

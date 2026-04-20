@@ -1,181 +1,207 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SSHFSMountTool\Command;
 
+use SSHFSMountTool\Connection\Connection;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
-class AddCommand extends Command {
+#[AsCommand(
+  name: 'add',
+  description: 'Add connection',
+)]
+final class AddCommand extends AbstractCommand {
 
-  protected function configure() {
-    $this->setName('add');
-    $this->setDescription('Add connection');
-  }
+  private const string SAVE_GLOBAL = 'global';
+  private const string SAVE_LOCAL = 'local';
+  private const string SAVE_CANCEL = 'cancel';
 
   protected function execute(InputInterface $input, OutputInterface $output): int {
-    global $preferences;
-    $connection_settings = [];
-    $helper = $this->getHelper('question');
+    $io = new SymfonyStyle($input, $output);
+    $verbose = $output->isVerbose();
 
-    // Server, required.
-    $server = new Question('Server: ');
-    $server->setValidator(function ($answer) {
-      if (trim($answer) == '') {
-        throw new \Exception('Server is required');
+    $server = $this->askRequired($io, 'Server');
+    $port = $this->askPort($io, $verbose);
+    $user = $this->askOptional($io, 'Username');
+
+    $password_raw = $io->askHidden(
+      $verbose
+        ? 'Password (leave blank for key auth — if not set, it will be asked every time on connect)'
+        : 'Password',
+    );
+    $password = is_string($password_raw) && $password_raw !== '' ? $password_raw : NULL;
+
+    $key_prompt = $verbose
+      ? 'Path to key file (type "n" to skip and use password auth)'
+      : 'Key file (type "n" to skip)';
+    $key_question = new Question($key_prompt, '~/.ssh/id_rsa');
+    $key_question->setValidator(static function (?string $answer): ?string {
+      if ($answer === NULL) {
+        return NULL;
       }
-      return $answer;
+      return in_array(strtolower($answer), ['n', 'no'], TRUE) ? NULL : $answer;
     });
-    $connection_settings['server'] = $helper->ask($input, $output, $server);
+    $key_raw = $io->askQuestion($key_question);
+    $key = is_string($key_raw) && $key_raw !== '' ? $key_raw : NULL;
 
-    // Port.
-    $prompt_port = ($output->isVerbose()) ? 'Port. 22 is a default port, don\'t need to specify it []: ' : 'Port []: ';
-    $port = new Question($prompt_port);
-    $port->setValidator(function ($answer) {
-      if ($answer == '') {
-        return;
-      }
-      if (filter_var($answer, FILTER_VALIDATE_INT, array('options' => array('min_range' => 0, 'max_range' => 65535))) === false) {
-        throw new \Exception('Invalid port value');
-      }
-      return $answer;
-    });
-    $connection_settings['port'] = $helper->ask($input, $output, $port);
+    $default_title = $this->suggestTitle($server);
 
-    // User.
-    $user = new Question('Username []: ');
-    $connection_settings['user'] = $helper->ask($input, $output, $user);
+    $default_mount = rtrim($this->services->preferences->mountPath, '/') . '/' . $default_title;
+    $mount_prompt = $verbose
+      ? 'Mount directory (required for mounting)'
+      : 'Mount directory';
+    $mount = (string) $io->askQuestion(new Question($mount_prompt, $default_mount));
 
-    // Password.
-    $prompt_password = ($output->isVerbose()) ? 'Password. If password not provided, it will be asked every time on connect. Leave blank for key auth []: ' : 'Password []: ';
-    $password = new Question($prompt_password);
-    $password->setHidden(TRUE);
-    $connection_settings['password'] = $helper->ask($input, $output, $password);
+    $remote = $this->askOptional($io, 'Remote directory');
 
-    // Key.
-    $prompt_key = ($output->isVerbose()) ? 'Path to key file. Skip for using password auth [<comment>~/.ssh/id_rsa</comment>, n to skip]: ' : 'Key file. [<comment>~/.ssh/id_rsa</comment>, n to skip]: ';
-    $key = new Question($prompt_key, '~/.ssh/id_rsa');
-    $key->setValidator(function ($answer) {
-      if ($answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
-        return;
-      }
-      return $answer;
-    });
-    $connection_settings['key'] = $helper->ask($input, $output, $key);
+    $options_prompt = $verbose
+      ? 'Mount options (comma-separated)'
+      : 'Mount options';
+    $options_raw = $io->askQuestion(new Question($options_prompt));
+    $options = $this->parseCommaList((string) ($options_raw ?? ''));
 
-    // Try to suggest default connection tile.
-    if (ip2long($connection_settings['server']) !== FALSE) {
-      $default_title = str_replace('.', '-', $connection_settings['server']);
-    }
-    else {
-      // 'server' is domain name.
-      $domain = explode('.', $connection_settings['server']);
-      if (count($domain) > 1) {
-        // domain without zone
-        $default_title = $domain[count($domain) - 2];
-      }
-      else {
-        // Complex domain name, so just print full domain.
-        $default_title = $connection_settings['server'];
-      }
+    $title = (string) $io->askQuestion(new Question('Connection title', $default_title));
+
+    $default_cid = $this->suggestCid($title);
+    $cid_prompt = $verbose
+      ? 'Connection ID (used as shortcut, must be unique)'
+      : 'Connection ID';
+    $cid = (string) $io->askQuestion(new Question($cid_prompt, $default_cid));
+
+    $connection = new Connection(
+      id: $cid,
+      title: $title,
+      server: $server,
+      port: $port,
+      user: $user,
+      password: $password,
+      key: $key,
+      mount: $mount,
+      remote: $remote,
+      options: $options,
+    );
+
+    if ($verbose) {
+      $io->newLine();
+      $this->services->settingsTableRenderer->render($io, $connection);
+      $io->newLine();
     }
 
-    // Mount.
-    $default_mount = $preferences['mount_path'] . '/' . $default_title;
-    $prompt_mount = ($output->isVerbose()) ? 'Mount directory. Required for mounting [<comment>' . $default_mount . '</comment>]: ' : 'Mount directory [<comment>' . $default_mount . '</comment>]: ';
-    $mount = new Question($prompt_mount, $default_mount);
-    $connection_settings['mount'] = $helper->ask($input, $output, $mount);
-
-    // Remote.
-    $remote = new Question('Remote directory []: ');
-    $connection_settings['remote'] = $helper->ask($input, $output, $remote);
-
-    // Mount Options.
-    $prompt_options = ($output->isVerbose()) ? 'Mount options, separated by comma []: ' : 'Mount options []: ';
-    $options_question = new Question($prompt_options);
-    $options = $helper->ask($input, $output, $options_question);
-    $options = explode(',', $options ?: '');
-    $options = array_map('trim', $options);
-    $connection_settings['options'] = array_filter($options);
-
-    // TODO: Consider prompting for SSH options.
-    // SSH Options.
-    // $prompt_ssh_options = ($output->isVerbose()) ? 'SSH options, separated by comma []: ' : 'SSH options []: ';
-    // $ssh_options_question = new Question($prompt_ssh_options);
-    // $ssh_options = $helper->ask($input, $output, $ssh_options_question);
-    // $ssh_options = explode(',', $ssh_options ?: '');
-    // $ssh_options = array_map('trim', $ssh_options);
-    // $connection_settings['ssh_options'] = array_filter($ssh_options);
-
-    // Title.
-    $title_question = new Question('Connection title [<comment>' . $default_title . '</comment>]: ', $default_title);
-    $title = $helper->ask($input, $output, $title_question);
-    $connection_settings = ['title' => $title] + $connection_settings;
-
-    // Try to suggest default connection id.
-    $default_cid = preg_replace('#[aeiouy\-_\s]+#i', '', substr($connection_settings['title'], 1));
-    $default_cid = strtolower(substr($connection_settings['title'], 0, 1) . $default_cid);
-    $default_cid = substr($default_cid, 0, 3);
-
-    // Connection ID.
-    $prompt_cid = ($output->isVerbose()) ? 'Connection ID. Used as shortcut, must be unique [<comment>' . $default_cid . '</comment>]: ' : 'Connection ID [<comment>' . $default_cid . '</comment>]: ';
-    $cid_question = new Question($prompt_cid, $default_cid);
-    $cid = $helper->ask($input, $output, $cid_question);
-
-    // Show settings.
-    if ($output->isVerbose()) {
-      $output->writeln('');
-      $table = gen_connection_settings_table($cid, $connection_settings, $output);
-      $table->render();
-      $output->writeln('');
-    }
-
-    // Saving.
-    $prompt_save = ($output->isVerbose()) ? 'Save config [<comment>y — globally</comment> / l — locally (current directory) / n, c to cancel]? ' : 'Save config [<comment>y — globally</comment> / l — locally / n, c to cancel]? ';
-    $save_question = new Question($prompt_save);
-    $save_question->setValidator(function ($answer) {
-      if ($answer == '' || $answer == 'g' || $answer == 'G' || $answer == 'globally' || $answer == 'Globally' || $answer == 'GLOBALLY' ||
-        $answer == 'y' || $answer == 'Y' || $answer == 'yes' || $answer == 'Yes' || $answer == 'YES') {
-        // Return from callback without $cid.
-        return 'global';
-      }
-      elseif ($answer == 'l' || $answer == 'L' || $answer == 'locally' || $answer == 'Locally' || $answer == 'LOCALLY') {
-        // Return from callback without $cid.
-        return 'local';
-      }
-      elseif ($answer == 'c' || $answer == 'C' || $answer == 'cancel' || $answer == 'Cancel' || $answer == 'CANCEL' ||
-        $answer == 'n' || $answer == 'N' || $answer == 'no' || $answer == 'No' || $answer == 'NO') {
-        // Return from callback without value.
-        return;
-      }
-      else {
-        throw new \RuntimeException(
-          $answer . ' is not a valid answer.'
-        );
-      }
-    });
-
-    $save = $helper->ask($input, $output, $save_question);
-
-    if ($save == 'global') {
-      $preferences['global'] = TRUE;
-      set_connection_settings($cid, $connection_settings, $input, $output, $helper);
-    }
-    elseif ($save == 'local') {
-      $preferences['global'] = FALSE;
-      $local = TRUE;
-      set_connection_settings($cid, $connection_settings, $input, $output, $helper, $local);
-    }
-    else {
-      // Canceled.
+    $scope = $this->askSaveScope($io);
+    if ($scope === self::SAVE_CANCEL) {
       return Command::SUCCESS;
     }
 
-    // Here can be only success savings.
-    $output->writeln('<info>Connection saved</info>');
+    $use_current = $scope === self::SAVE_LOCAL;
+    if ($this->services->connections->exists($cid) && !$this->confirmOverwrite($io, $cid)) {
+      return Command::SUCCESS;
+    }
+    $this->services->connections->save($connection, useCurrent: $use_current);
 
+    $io->writeln('<info>Connection saved</info>');
     return Command::SUCCESS;
+  }
+
+  private function askRequired(SymfonyStyle $io, string $prompt): string {
+    $question = new Question($prompt);
+    $question->setValidator(static function (?string $answer): string {
+      if ($answer === NULL || trim($answer) === '') {
+        throw new \RuntimeException('Server is required');
+      }
+      return $answer;
+    });
+    return (string) $io->askQuestion($question);
+  }
+
+  private function askOptional(SymfonyStyle $io, string $prompt): ?string {
+    $answer = $io->askQuestion(new Question($prompt));
+    return is_string($answer) && $answer !== '' ? $answer : NULL;
+  }
+
+  private function askPort(SymfonyStyle $io, bool $verbose): ?int {
+    $prompt = $verbose
+      ? 'Port (leave empty for the default 22)'
+      : 'Port';
+    $question = new Question($prompt);
+    $question->setValidator(static function (?string $answer): ?int {
+      if ($answer === NULL || trim($answer) === '') {
+        return NULL;
+      }
+      $int = filter_var($answer, FILTER_VALIDATE_INT, [
+        'options' => ['min_range' => 0, 'max_range' => 65_535],
+      ]);
+      if ($int === FALSE) {
+        throw new \RuntimeException('Invalid port value');
+      }
+      return $int;
+    });
+    $value = $io->askQuestion($question);
+    return is_int($value) ? $value : NULL;
+  }
+
+  private function askSaveScope(SymfonyStyle $io): string {
+    $question = new ChoiceQuestion(
+      'Save config',
+      [
+        'y' => 'globally (user config)',
+        'l' => 'locally (./smt.yml)',
+        'n' => 'cancel',
+      ],
+      'y',
+    );
+    $question->setErrorMessage('%s is not a valid answer.');
+
+    $answer = $io->askQuestion($question);
+    return match (strtolower((string) $answer)) {
+      'y', 'yes', 'g', 'globally', 'globally (user config)' => self::SAVE_GLOBAL,
+      'l', 'locally', 'locally (./smt.yml)' => self::SAVE_LOCAL,
+      default => self::SAVE_CANCEL,
+    };
+  }
+
+  private function confirmOverwrite(SymfonyStyle $io, string $cid): bool {
+    $answer = $io->askQuestion(new ConfirmationQuestion(
+      sprintf('Connection "%s" already exists, overwrite it?', $cid),
+      FALSE,
+    ));
+    return $answer === TRUE;
+  }
+
+  private function suggestTitle(string $server): string {
+    if (ip2long($server) !== FALSE) {
+      return str_replace('.', '-', $server);
+    }
+    $parts = explode('.', $server);
+    if (count($parts) > 1) {
+      return $parts[count($parts) - 2];
+    }
+    return $server;
+  }
+
+  private function suggestCid(string $title): string {
+    $stripped = preg_replace('#[aeiouy\-_\s]+#i', '', substr($title, 1)) ?? '';
+    $cid = strtolower(substr($title, 0, 1) . $stripped);
+    return substr($cid, 0, 3);
+  }
+
+  /**
+   * @return list<string>
+   */
+  private function parseCommaList(string $raw): array {
+    $raw = trim($raw);
+    if ($raw === '') {
+      return [];
+    }
+    $items = array_map('trim', explode(',', $raw));
+    return array_values(array_filter($items, static fn (string $v): bool => $v !== ''));
   }
 
 }

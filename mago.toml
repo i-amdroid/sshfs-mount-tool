@@ -1,0 +1,55 @@
+# Mago config — https://mago.carthage.software/tools/overview
+php-version = "8.4.0"
+
+[source]
+workspace = "."
+paths = ["src/", "tests/"]
+includes = ["vendor"]
+excludes = []
+
+[formatter]
+preset = "drupal"
+
+[linter]
+integrations = ["symfony"]
+
+[linter.rules]
+# Idiomatic — we guard writes with return checks.
+no-error-control-operator = { enabled = false }
+
+# Test fixtures inherently contain string literals that look like passwords.
+no-literal-password = { enabled = false }
+
+# `getenv('HOME') ?: ''` and friends read more cleanly than the alternative.
+no-shorthand-ternary = { enabled = false }
+
+# Small tool — some classes (Preferences DTO, Services wire-up, AddCommand
+# interactive flow) are intentionally "wide" rather than "deep". Relax the
+# thresholds rather than shattering them into ceremony.
+cyclomatic-complexity = { enabled = false }
+kan-defect = { enabled = false }
+too-many-properties = { enabled = false }
+excessive-parameter-list = { enabled = false }
+halstead = { volume-threshold = 1500, effort-threshold = 9000, difficulty-threshold = 15 }
+no-boolean-flag-parameter = { enabled = false }
+no-else-clause = { enabled = false }
+
+# Existing relaxations from the reference project.
+ambiguous-function-call = { enabled = false }
+literal-named-argument = { enabled = false }
+lowercase-keyword = { enabled = false }
+
+[analyzer]
+plugins = []
+find-unused-definitions = true
+find-unused-expressions = false
+analyze-dead-code = false
+memoize-properties = true
+allow-possibly-undefined-array-keys = true
+check-throws = false
+check-missing-override = false
+find-unused-parameters = false
+strict-list-index-checks = false
+no-boolean-literal-comparison = false
+check-missing-type-hints = false
+register-super-globals = true
